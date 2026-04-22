@@ -1,10 +1,10 @@
 {
-  "projectId": "planning-with-ai-ca084",
-  "appId": "1:14610107315:web:f4a9efd0c2806d1603d9c6",
-  "apiKey": "AIzaSyAudSe0dNPYkkF_98KeAl9kpMk7HOOPvNw",
-  "authDomain": "planning-with-ai-ca084.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-6b0e78c4-3aa5-429e-9b2e-33d66d6e9d40",
-  "storageBucket": "planning-with-ai-ca084.firebasestorage.app",
-  "messagingSenderId": "14610107315",
-  "measurementId": ""
+  "apiKey": "AIzaSyB2j-StB_bC9xbsgifFNkM3VIyDGJmZ7rQ",
+  "authDomain": "impactful-ring-469323-e5.firebaseapp.com",
+  "databaseURL": "https://impactful-ring-469323-e5-default-rtdb.europe-west1.firebasedatabase.app",
+  "projectId": "impactful-ring-469323-e5",
+  "storageBucket": "impactful-ring-469323-e5.firebasestorage.app",
+  "messagingSenderId": "316842561818",
+  "appId": "1:316842561818:web:5d590a68599c1c3a2c5ca3",
+  "measurementId": "G-3SPB7L18VG"
 }
