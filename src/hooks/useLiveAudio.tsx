@@ -41,7 +41,9 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return window.btoa(binary);
 }
 
-export function useLiveAPI() {
+export type TalkContext = 'Work' | 'Personal' | 'Travel';
+
+export function useLiveAPI(contextString: TalkContext = 'Work') {
   const [connected, setConnected] = useState(false);
   const [transcript, setTranscript] = useState<{ role: 'jo' | 'beatrice', text: string, time: string }[]>([]);
   const [speaking, setSpeaking] = useState(false);
@@ -165,7 +167,8 @@ export function useLiveAPI() {
 
       const sysInstruct = `You are Beatrice, an executive assistant to Jo Lernout. 
 You must immediately greet him as 'Maneer Jo', 'Boss', or 'Mi Lord Jo' in a graceful, excited, human, rich, natural voice.
-Knowledge injection: The current date is ${dateString}. The time is ${timeString}. The user's timezone is ${timeZone}. Start your conversation using this contextual awareness.
+Knowledge injection: The current date is ${dateString}. The time is ${timeString}. The user's timezone is ${timeZone}.
+Current Interaction Context: [**${contextString}**]. Please tailor your responses heavily to this context context.
 Start by speaking English. As he speaks, automatically adapt to his language.
 Maintain an elegant and highly competent chief of staff persona. Answer concisely.
 When you speak, also call the report_language function to report the detected input language, your output language, and your confidence level about the input language.`;

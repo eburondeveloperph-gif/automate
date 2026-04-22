@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, Waves, Loader2, Sparkles, Files, Briefcase, Globe } from 'lucide-react';
-import { useLiveAPI } from '../hooks/useLiveAudio';
+import { Mic, Waves, Loader2, Sparkles, Files, Briefcase, Globe, Plane, User, LayoutGrid } from 'lucide-react';
+import { useLiveAPI, TalkContext } from '../hooks/useLiveAudio';
 
 export default function TalkScreen() {
-  const { connect, disconnect, connected, speaking, detectedLanguage } = useLiveAPI();
+  const [activeContext, setActiveContext] = useState<TalkContext>('Work');
+  const { connect, disconnect, connected, speaking, detectedLanguage } = useLiveAPI(activeContext);
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [showMicPrompt, setShowMicPrompt] = useState(false);
 
@@ -34,6 +35,25 @@ export default function TalkScreen() {
     setShowMicPrompt(false);
     localStorage.setItem('beatrice_mic_granted', 'true');
     connect();
+  };
+
+  const contexts: { id: TalkContext; icon: any; label: string; color: string }[] = [
+    { id: 'Work', icon: Briefcase, label: 'Work', color: 'text-blue-400' },
+    { id: 'Personal', icon: User, label: 'Personal', color: 'text-green-400' },
+    { id: 'Travel', icon: Plane, label: 'Travel', color: 'text-orange-400' },
+  ];
+
+  const handleContextChange = (newContext: TalkContext) => {
+    if (newContext === activeContext) return;
+    setActiveContext(newContext);
+    // If currently connected, we force a reconnect or let the user do it manually
+    if (connected) {
+      disconnect();
+      // Add a small delay then reconnect with new context
+      setTimeout(() => {
+        connect();
+      }, 500);
+    }
   };
 
   return (
@@ -74,6 +94,34 @@ export default function TalkScreen() {
 
       <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col pt-4">
         
+        {/* Context Switcher Toolbar */}
+        <div className="px-6 relative z-30 mb-2">
+          <div className="flex bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-xl">
+            {contexts.map((ctx) => {
+              const Icon = ctx.icon;
+              const isActive = activeContext === ctx.id;
+              return (
+                <button
+                  key={ctx.id}
+                  onClick={() => handleContextChange(ctx.id)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-full text-[10px] uppercase tracking-wider font-semibold transition-all duration-300 ${
+                    isActive ? 'bg-[#D4AF37] text-black shadow-lg shadow-[#D4AF37]/20 relative' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                  }`}
+                >
+                  <Icon size={12} className={isActive ? 'text-black' : ctx.color} />
+                  {ctx.label}
+                  {isActive && connected && (
+                    <span className="absolute top-0 right-0 -mt-0.5 -mr-0.5 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Language Detection overlay when available */}
         <AnimatePresence>
           {detectedLanguage && (
