@@ -212,6 +212,7 @@ When you speak, also call the report_language function to report the detected in
                }
              };
              source.connect(workletNode);
+             workletNode.connect(audioCtxRef.current!.destination);
              
              (window as any).currentMicStream = stream;
              (window as any).currentWorklet = workletNode;

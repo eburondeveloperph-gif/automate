@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, Mail, Lock, LogIn, Chrome, Loader2 } from 'lucide-react';
+import { Mic, Mail, Lock, LogIn, Loader2, Chrome } from 'lucide-react';
 import { auth, googleProvider } from '../lib/firebase';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -28,6 +28,7 @@ export default function AuthScreen() {
     try {
       setLoading(true);
       setError(null);
+      
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
@@ -36,6 +37,7 @@ export default function AuthScreen() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || `Failed to ${isLogin ? 'log in' : 'create account'}`);
+    } finally {
       setLoading(false);
     }
   };
