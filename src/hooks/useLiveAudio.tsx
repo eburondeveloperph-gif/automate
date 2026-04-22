@@ -5,16 +5,25 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const workletCode = `
 class RecorderProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.bufferSize = 4096;
+    this.buffer = new Int16Array(this.bufferSize);
+    this.offset = 0;
+  }
   process(inputs, outputs, parameters) {
     const input = inputs[0];
     if (input.length > 0) {
       const channelData = input[0];
-      const pcm16 = new Int16Array(channelData.length);
       for (let i = 0; i < channelData.length; i++) {
         const s = Math.max(-1, Math.min(1, channelData[i]));
-        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        this.buffer[this.offset++] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        if (this.offset >= this.bufferSize) {
+          const out = new Int16Array(this.buffer);
+          this.port.postMessage(out.buffer, [out.buffer]);
+          this.offset = 0;
+        }
       }
-      this.port.postMessage(pcm16.buffer, [pcm16.buffer]);
     }
     return true;
   }
@@ -45,7 +54,7 @@ export function useLiveAPI() {
 
   const initAudioContext = async () => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext({ sampleRate: 24000 });
+      audioCtxRef.current = new AudioContext({ sampleRate: 16000 });
       const workletBlob = new Blob([workletCode], { type: 'application/javascript' });
       const workletUrl = URL.createObjectURL(workletBlob);
       await audioCtxRef.current.audioWorklet.addModule(workletUrl);
