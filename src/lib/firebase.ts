@@ -19,12 +19,15 @@ export const db = getFirestore(app);
 
 export const googleProvider = new GoogleAuthProvider();
 
-// Scopes for Google Services Integration (Drive, Gmail, Docs, Sheets)
+// Scopes for Google Services Integration (Drive, Gmail, Docs, Sheets, Presentations, Calendar/Meet, Contacts)
 // Note: These scopes require verification in Google Cloud Console for production use.
-googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
-googleProvider.addScope('https://www.googleapis.com/auth/documents.readonly');
+googleProvider.addScope('https://mail.google.com/'); // Full access to Gmail
+googleProvider.addScope('https://www.googleapis.com/auth/drive'); // Full access to Drive (includes Docs, Sheets, Presentations)
+googleProvider.addScope('https://www.googleapis.com/auth/documents'); // Specific access to Google Docs
+googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets'); // Specific access to Google Sheets
+googleProvider.addScope('https://www.googleapis.com/auth/presentations'); // Specific access to Google Slides (PowerPoint)
+googleProvider.addScope('https://www.googleapis.com/auth/calendar'); // Access to Calendar (for GMeet)
+googleProvider.addScope('https://www.googleapis.com/auth/contacts'); // Access to Google Contacts
 
 export interface FirestoreErrorInfo {
   error: string;

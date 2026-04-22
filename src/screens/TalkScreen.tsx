@@ -4,7 +4,9 @@ import { Mic, Waves, Loader2, Sparkles, Files, Briefcase, Globe, Plane, User, La
 import { useLiveAPI, TalkContext } from '../hooks/useLiveAudio';
 
 export default function TalkScreen() {
-  const [activeContext, setActiveContext] = useState<TalkContext>('Work');
+  const [activeContext, setActiveContext] = useState<TalkContext>(() => {
+    return (localStorage.getItem('beatrice_active_context') as TalkContext) || 'Work';
+  });
   const { connect, disconnect, connected, speaking, detectedLanguage } = useLiveAPI(activeContext);
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [showMicPrompt, setShowMicPrompt] = useState(false);
@@ -46,6 +48,7 @@ export default function TalkScreen() {
   const handleContextChange = (newContext: TalkContext) => {
     if (newContext === activeContext) return;
     setActiveContext(newContext);
+    localStorage.setItem('beatrice_active_context', newContext);
     // If currently connected, we force a reconnect or let the user do it manually
     if (connected) {
       disconnect();
