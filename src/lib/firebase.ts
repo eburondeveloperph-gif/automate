@@ -15,3 +15,40 @@ googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
 googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
 googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
 googleProvider.addScope('https://www.googleapis.com/auth/documents.readonly');
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: 'create' | 'update' | 'delete' | 'list' | 'get' | 'write';
+  path: string | null;
+  authInfo: {
+    userId: string;
+    email: string;
+    emailVerified: boolean;
+    isAnonymous: boolean;
+    providerInfo: { providerId: string; displayName: string; email: string; }[];
+  }
+}
+
+export function handleFirestoreError(err: unknown, operationType: FirestoreErrorInfo['operationType'], path: string | null): never {
+  if (err instanceof Error && err.message.includes('Missing or insufficient permissions')) {
+    const currentUser = auth.currentUser;
+    const errorInfo: FirestoreErrorInfo = {
+      error: err.message,
+      operationType,
+      path,
+      authInfo: {
+        userId: currentUser?.uid || '',
+        email: currentUser?.email || '',
+        emailVerified: currentUser?.emailVerified || false,
+        isAnonymous: currentUser?.isAnonymous || false,
+        providerInfo: currentUser?.providerData.map(p => ({
+          providerId: p.providerId,
+          displayName: p.displayName || '',
+          email: p.email || ''
+        })) || []
+      }
+    };
+    throw new Error(JSON.stringify(errorInfo));
+  }
+  throw err;
+}

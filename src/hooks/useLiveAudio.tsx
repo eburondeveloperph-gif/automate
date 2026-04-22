@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
+import { GoogleGenAI, LiveServerMessage, Modality, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -176,11 +176,11 @@ When you speak, also call the report_language function to report the detected in
               name: 'report_language',
               description: 'Report the detected spoken language to the UI.',
               parameters: {
-                type: 'OBJECT',
+                type: Type.OBJECT,
                 properties: {
-                  inputLanguage: { type: 'STRING', description: 'The detected language of the user input' },
-                  outputLanguage: { type: 'STRING', description: 'The language you are responding in' },
-                  confidence: { type: 'STRING', description: 'Confidence level like High, Medium, Low' }
+                  inputLanguage: { type: Type.STRING, description: 'The detected language of the user input' },
+                  outputLanguage: { type: Type.STRING, description: 'The language you are responding in' },
+                  confidence: { type: Type.STRING, description: 'Confidence level like High, Medium, Low' }
                 },
                 required: ['inputLanguage', 'outputLanguage', 'confidence']
               }

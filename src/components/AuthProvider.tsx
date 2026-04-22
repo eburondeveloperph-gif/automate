@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, handleFirestoreError } from '../lib/firebase';
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -33,7 +33,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
              });
           }
         } catch (err) {
-          console.error("Firebase connection / rules error:", err);
+          if(err instanceof Error && err.message.includes('the client is offline')) {
+            console.error("Please check your Firebase configuration.");
+          } else {
+            handleFirestoreError(err, 'create', `users/${firebaseUser.uid}`);
+          }
         }
       } else {
         setUser(null);
