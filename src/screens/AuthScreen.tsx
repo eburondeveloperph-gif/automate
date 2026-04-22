@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, Mail, Lock, LogIn, Loader2, Chrome } from 'lucide-react';
 import { auth, googleProvider } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,7 +15,15 @@ export default function AuthScreen() {
     try {
       setLoading(true);
       setError(null);
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Extract the Google Access Token for calling Google APIs (Gmail, Drive, etc.)
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        // Save the token securely to be used across the applet
+        localStorage.setItem('beatrice_google_access_token', credential.accessToken);
+      }
+      
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to authenticate with Google');
