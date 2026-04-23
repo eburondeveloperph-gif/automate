@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Brain, Trash2, Plus, Sparkles, Database, FileText, Search, X, Calendar } from 'lucide-react';
+import { Brain, Trash2, Plus, Sparkles, Database, FileText, Search, X, Calendar, MessageSquare, User, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useMemories, MemoryType } from '../hooks/useMemories';
+import { useInteractions } from '../hooks/useInteractions';
 
 export default function MemoryScreen() {
-  const { memories, loading, addMemory, removeMemory } = useMemories();
+  const { memories, loading: memoriesLoading, addMemory, removeMemory } = useMemories();
+  const { interactions, loading: logsLoading } = useInteractions();
+  
+  const [activeView, setActiveView] = useState<'memory' | 'logs'>('memory');
   const [filter, setFilter] = useState<'all' | MemoryType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<'all' | '7d' | '30d'>('all');
@@ -103,13 +107,39 @@ export default function MemoryScreen() {
     return true;
   });
 
+  const filteredLogs = interactions.filter(log => {
+    if (searchQuery && !log.text.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - log.timestamp.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (dateFilter === '7d' && diffDays > 7) return false;
+      if (dateFilter === '30d' && diffDays > 30) return false;
+    }
+    
+    return true;
+  });
+
   return (
     <div className="flex flex-col h-full px-4 pt-4 pb-20 gap-6 overflow-y-auto hide-scrollbar relative">
       <div className="flex items-center justify-between shrink-0">
         <h2 className="font-serif text-2xl tracking-tight text-white/90">Memory</h2>
-        <span className="text-[10px] uppercase tracking-wider text-white/40 flex items-center gap-1">
-          <Brain size={12} /> {memories.length} Stored
-        </span>
+        <div className="flex bg-white/5 p-1 rounded-lg border border-white/10">
+          <button 
+            onClick={() => setActiveView('memory')}
+            className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-widest transition-all ${activeView === 'memory' ? 'bg-[#D4AF37] text-black font-bold' : 'text-white/40'}`}
+          >
+            Context
+          </button>
+          <button 
+            onClick={() => setActiveView('logs')}
+            className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-widest transition-all ${activeView === 'logs' ? 'bg-[#D4AF37] text-black font-bold' : 'text-white/40'}`}
+          >
+            Logs
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 shrink-0">
@@ -120,7 +150,7 @@ export default function MemoryScreen() {
           </div>
           <input
             type="text"
-            placeholder="Search memory contents..."
+            placeholder={activeView === 'memory' ? "Search memory contents..." : "Search conversation patterns..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-9 pr-8 text-sm font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
@@ -138,17 +168,19 @@ export default function MemoryScreen() {
         {/* Filters Group */}
         <div className="flex flex-col gap-2">
           {/* Main Type Filters */}
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-            {filters.map((f) => (
-              <button 
-                key={f.id} 
-                onClick={() => setFilter(f.id)}
-                className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider border transition-colors ${filter === f.id ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-white/10 text-white/50 glass-panel hover:bg-white/5'}`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          {activeView === 'memory' && (
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+              {filters.map((f) => (
+                <button 
+                  key={f.id} 
+                  onClick={() => setFilter(f.id)}
+                  className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider border transition-colors ${filter === f.id ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-white/10 text-white/50 glass-panel hover:bg-white/5'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Date Range Filters */}
           <div className="flex gap-2 relative">
@@ -174,130 +206,188 @@ export default function MemoryScreen() {
         </div>
       </div>
 
-      {/* Add Memory Form */}
-      <form onSubmit={handleAddMemory} className="glass-panel p-3 rounded-2xl flex flex-col gap-3 shrink-0 border border-white/10">
-        <div className="flex gap-2">
-          {['fact', 'preference', 'summary'].map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setNewType(t as MemoryType)}
-              className={`px-3 py-1 rounded-full text-[9px] uppercase tracking-widest border transition-colors ${newType === t ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-transparent text-white/40 hover:text-white/60 bg-white/5'}`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 items-end">
-          <textarea
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            placeholder="Add new context to memory..."
-            className="flex-1 bg-transparent text-sm text-white/90 placeholder-white/30 resize-none outline-none max-h-32 min-h-[40px]"
-            rows={2}
-          />
-          <button 
-            type="submit" 
-            disabled={!newContent.trim() || isAdding}
-            className="shrink-0 w-8 h-8 rounded-full bg-[#D4AF37] text-black flex items-center justify-center disabled:opacity-50 disabled:bg-white/10 disabled:text-white/30 transition-colors"
-          >
-            <Plus size={16} />
-          </button>
-        </div>
-      </form>
-
-      {/* Suggestions Section */}
-      <AnimatePresence>
-        {suggestions.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="flex flex-col gap-3 shrink-0"
-          >
-            <div className="flex items-center gap-2 px-1">
-               <Sparkles size={14} className="text-[#D4AF37]" />
-               <h3 className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold">Intelligence Insights</h3>
-            </div>
-            <div className="flex gap-3 overflow-x-auto hide-scrollbar py-1">
-              {suggestions.map((suggestion) => (
-                <div key={suggestion.id} className="min-w-[260px] glass-panel-heavy rounded-2xl p-4 border border-[#D4AF37]/30 flex flex-col gap-3 relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
-                     <Brain size={40} className="text-[#D4AF37]" />
-                   </div>
-                   <div className="flex items-center justify-between">
-                     <span className="text-[8px] uppercase tracking-wider text-white/40 bg-white/5 px-2 py-0.5 rounded-full">Source: {suggestion.source}</span>
-                     <button onClick={() => setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))} className="text-white/20 hover:text-white transition-colors">
-                       <X size={12} />
-                     </button>
-                   </div>
-                   <p className="text-xs font-serif text-white/80 leading-relaxed italic border-l-2 border-[#D4AF37]/40 pl-3">
-                     "{suggestion.content}"
-                   </p>
-                   <button 
-                    onClick={() => handleAddFromSuggestion(suggestion.id, suggestion.content, suggestion.type)}
-                    className="w-full py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-xl text-[9px] uppercase tracking-widest text-[#D4AF37] font-bold hover:bg-[#D4AF37] hover:text-black transition-all"
-                   >
-                     Commit to Memory
-                   </button>
-                </div>
+      {/* Conditional Content */}
+      {activeView === 'memory' ? (
+        <>
+          {/* Add Memory Form */}
+          <form onSubmit={handleAddMemory} className="glass-panel p-3 rounded-2xl flex flex-col gap-3 shrink-0 border border-white/10">
+            <div className="flex gap-2">
+              {['fact', 'preference', 'summary'].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setNewType(t as MemoryType)}
+                  className={`px-3 py-1 rounded-full text-[9px] uppercase tracking-widest border transition-colors ${newType === t ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-transparent text-white/40 hover:text-white/60 bg-white/5'}`}
+                >
+                  {t}
+                </button>
               ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="flex gap-2 items-end">
+              <textarea
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                placeholder="Add new context to memory..."
+                className="flex-1 bg-transparent text-sm text-white/90 placeholder-white/30 resize-none outline-none max-h-32 min-h-[40px]"
+                rows={2}
+              />
+              <button 
+                type="submit" 
+                disabled={!newContent.trim() || isAdding}
+                className="shrink-0 w-8 h-8 rounded-full bg-[#D4AF37] text-black flex items-center justify-center disabled:opacity-50 disabled:bg-white/10 disabled:text-white/30 transition-colors"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          </form>
 
-      {/* Memory List */}
-      <div className="flex flex-col gap-4">
-        <AnimatePresence mode="popLayout">
-          {loading ? (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-4">
-              Accessing core memory...
-            </motion.p>
-          ) : filteredMemories.length === 0 ? (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-8 border border-dashed border-white/10 rounded-2xl">
-              No matching memories found.
-            </motion.p>
-          ) : (
-            filteredMemories.map((memory) => {
-              const styles = getTypeStyles(memory.type);
-              return (
-                <motion.div 
-                  key={memory.id}
-                  layout
-                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className={`backdrop-blur-xl rounded-2xl p-4 flex flex-col gap-3 group relative border transition-colors ${styles.bg} ${styles.border}`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className={`flex items-center gap-2 px-2 py-1 rounded-md ${styles.badge}`}>
-                      {getTypeIcon(memory.type)}
-                      <h3 className={`text-[9px] uppercase tracking-widest font-bold ${styles.text}`}>
-                        {memory.type}
-                      </h3>
+          {/* Suggestions Section */}
+          <AnimatePresence>
+            {suggestions.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col gap-3 shrink-0"
+              >
+                <div className="flex items-center gap-2 px-1">
+                   <Sparkles size={14} className="text-[#D4AF37]" />
+                   <h3 className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold">Intelligence Insights</h3>
+                </div>
+                <div className="flex gap-3 overflow-x-auto hide-scrollbar py-1">
+                  {suggestions.map((suggestion) => (
+                    <div key={suggestion.id} className="min-w-[260px] glass-panel-heavy rounded-2xl p-4 border border-[#D4AF37]/30 flex flex-col gap-3 relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
+                         <Brain size={40} className="text-[#D4AF37]" />
+                       </div>
+                       <div className="flex items-center justify-between">
+                         <span className="text-[8px] uppercase tracking-wider text-white/40 bg-white/5 px-2 py-0.5 rounded-full">Source: {suggestion.source}</span>
+                         <button onClick={() => setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))} className="text-white/20 hover:text-white transition-colors">
+                           <X size={12} />
+                         </button>
+                       </div>
+                       <p className="text-xs font-serif text-white/80 leading-relaxed italic border-l-2 border-[#D4AF37]/40 pl-3">
+                         "{suggestion.content}"
+                       </p>
+                       <button 
+                        onClick={() => handleAddFromSuggestion(suggestion.id, suggestion.content, suggestion.type)}
+                        className="w-full py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-xl text-[9px] uppercase tracking-widest text-[#D4AF37] font-bold hover:bg-[#D4AF37] hover:text-black transition-all"
+                       >
+                         Commit to Memory
+                       </button>
                     </div>
-                    <button 
-                      onClick={() => setMemoryToDelete(memory.id)}
-                      className="opacity-0 group-hover:opacity-100 text-rose-400 hover:bg-rose-400/10 p-1.5 rounded-full transition-all"
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Memory List */}
+          <div className="flex flex-col gap-4">
+            <AnimatePresence mode="popLayout">
+              {memoriesLoading ? (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-4">
+                  Accessing core memory...
+                </motion.p>
+              ) : filteredMemories.length === 0 ? (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-8 border border-dashed border-white/10 rounded-2xl">
+                  No matching memories found.
+                </motion.p>
+              ) : (
+                filteredMemories.map((memory) => {
+                  const styles = getTypeStyles(memory.type);
+                  return (
+                    <motion.div 
+                      key={memory.id}
+                      layout
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className={`backdrop-blur-xl rounded-2xl p-4 flex flex-col gap-3 group relative border transition-colors ${styles.bg} ${styles.border}`}
                     >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                  <p className="text-sm font-serif leading-relaxed text-white/90 whitespace-pre-wrap">
-                    {memory.content}
-                  </p>
-                  <div className="flex items-center justify-between mt-1 pt-3 border-t border-white/5">
-                    <span className="text-[9px] text-white/30 uppercase tracking-wider">
-                      {memory.createdAt.toLocaleDateString()} {memory.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div className="flex items-center justify-between mb-1">
+                        <div className={`flex items-center gap-2 px-2 py-1 rounded-md ${styles.badge}`}>
+                          {getTypeIcon(memory.type)}
+                          <h3 className={`text-[9px] uppercase tracking-widest font-bold ${styles.text}`}>
+                            {memory.type}
+                          </h3>
+                        </div>
+                        <button 
+                          onClick={() => setMemoryToDelete(memory.id)}
+                          className="opacity-0 group-hover:opacity-100 text-rose-400 hover:bg-rose-400/10 p-1.5 rounded-full transition-all"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                      <p className="text-sm font-serif leading-relaxed text-white/90 whitespace-pre-wrap">
+                        {memory.content}
+                      </p>
+                      <div className="flex items-center justify-between mt-1 pt-3 border-t border-white/5">
+                        <span className="text-[9px] text-white/30 uppercase tracking-wider">
+                          {memory.createdAt.toLocaleDateString()} {memory.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </AnimatePresence>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <AnimatePresence mode="popLayout">
+            {logsLoading ? (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-4">
+                Loading interaction logs...
+              </motion.p>
+            ) : filteredLogs.length === 0 ? (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-8 border border-dashed border-white/10 rounded-2xl">
+                No conversations recorded yet.
+              </motion.p>
+            ) : (
+              filteredLogs.map((log) => (
+                <motion.div
+                  key={log.id}
+                  layout
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden"
+                >
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <div className="flex items-center gap-2">
+                      {log.role === 'jo' ? (
+                        <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500">
+                          <User size={10} />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
+                          <Bot size={10} />
+                        </div>
+                      )}
+                      <span className={`text-[10px] uppercase tracking-widest font-bold ${log.role === 'jo' ? 'text-blue-400' : 'text-[#D4AF37]'}`}>
+                        {log.role === 'jo' ? 'Boss' : 'Beatrice'}
+                      </span>
+                    </div>
+                    <span className="text-[8px] text-white/30 uppercase tracking-widest">
+                      {log.timestamp.toLocaleDateString()} {log.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
+                  <p className="text-xs font-light leading-relaxed text-white/80 italic">
+                    "{log.text}"
+                  </p>
+                  {log.context && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                       <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]/40 ring-2 ring-[#D4AF37]/10" />
+                       <span className="text-[9px] text-[#D4AF37]/60 uppercase tracking-wider font-medium">Mode: {log.context}</span>
+                    </div>
+                  )}
                 </motion.div>
-              );
-            })
-          )}
-        </AnimatePresence>
-      </div>
+              ))
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>

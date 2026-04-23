@@ -67,6 +67,16 @@ service cloud.firestore {
         && data.createdAt == request.time;
     }
 
+    function isValidInteractionCreate(data, userId) {
+      return data.keys().hasAll(['userId', 'role', 'text', 'timestamp'])
+        && data.keys().size() <= 5
+        && data.userId == userId
+        && data.role in ['jo', 'beatrice']
+        && data.text is string && data.text.size() <= 10000
+        && data.timestamp == request.time
+        && ( !('context' in data) || (data.context is string && data.context.size() <= 200) );
+    }
+
     // -------------------------------------------------------------------------
     // Routes and Access Rules
     // -------------------------------------------------------------------------
@@ -115,6 +125,17 @@ service cloud.firestore {
         allow update: if false; // file metadata should be immutable 
         
         allow delete: if isValidId(fileId) && isOwner(userId);
+      }
+
+      match /interactions/{interactionId} {
+        allow get: if isOwner(userId) && isValidId(interactionId);
+        allow list: if isOwner(userId); // Search queries will filter by userId implicit in path
+
+        allow create: if isValidId(interactionId)
+                      && isOwner(userId)
+                      && isValidInteractionCreate(incoming(), userId);
+                      
+        allow update, delete: if false; // interaction logs are immutable
       }
     }
   }

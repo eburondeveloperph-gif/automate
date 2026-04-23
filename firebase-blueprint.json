@@ -38,6 +38,19 @@
         "createdAt": { "type": "string", "format": "timestamp" }
       },
       "required": ["userId", "filename", "mimeType", "size", "storageUrl", "createdAt"]
+    },
+    "Interaction": {
+      "title": "Interaction",
+      "description": "A single piece of conversation between Jo and Beatrice",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["jo", "beatrice"] },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "timestamp" },
+        "context": { "type": "string" }
+      },
+      "required": ["userId", "role", "text", "timestamp"]
     }
   },
   "firestore": {
@@ -52,6 +65,10 @@
     "users/{userId}/files/{fileId}": {
       "schema": { "$ref": "#/entities/UploadedFile" },
       "description": "Uploaded file metadata owned by the user."
+    },
+    "users/{userId}/interactions/{interactionId}": {
+      "schema": { "$ref": "#/entities/Interaction" },
+      "description": "Searchable conversation logs."
     }
   }
 }

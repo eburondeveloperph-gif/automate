@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Type } from "@google/genai";
+import { db, auth as firebaseAuth } from '../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -100,6 +102,22 @@ export function useLiveAPI(contextString: TalkContext = 'Work', enableCamera = t
         realtimeInput: { mediaChunks: [{ data: base64, mimeType: 'image/jpeg' }] }
       });
     }).catch(console.error);
+  };
+
+  const saveInteraction = async (role: 'jo' | 'beatrice', text: string) => {
+    const user = firebaseAuth.currentUser;
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'users', user.uid, 'interactions'), {
+        userId: user.uid,
+        role,
+        text,
+        timestamp: serverTimestamp(),
+        context: contextString
+      });
+    } catch (err) {
+      console.error("Failed to save interaction", err);
+    }
   };
 
   // Monitor mic strength
@@ -462,7 +480,9 @@ When Jo asks to search for something, use 'drive_search', 'gmail_search', or 'yo
                   playAudioChunk(part.inlineData.data);
                 }
                 if (part.text) {
-                  setTranscript(prev => [...prev, { role: 'beatrice', text: part.text!, time: new Date().toLocaleTimeString() }]);
+                  const text = part.text;
+                  setTranscript(prev => [...prev, { role: 'beatrice', text, time: new Date().toLocaleTimeString() }]);
+                  saveInteraction('beatrice', text);
                 }
                 if (part.functionCall) {
                   const call = part.functionCall;
@@ -685,6 +705,7 @@ When Jo asks to search for something, use 'drive_search', 'gmail_search', or 'yo
             if ((message as any).transcription?.text) {
               const text = (message as any).transcription.text;
               setTranscript(prev => [...prev, { role: 'jo', text, time: new Date().toLocaleTimeString() }]);
+              saveInteraction('jo', text);
             }
           },
           onerror: (err: any) => {
