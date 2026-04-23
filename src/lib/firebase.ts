@@ -28,14 +28,12 @@ export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Scopes for Google Services Integration
-googleProvider.addScope('https://www.googleapis.com/auth/gmail.modify'); 
-googleProvider.addScope('https://www.googleapis.com/auth/drive'); 
-googleProvider.addScope('https://www.googleapis.com/auth/documents'); 
-googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets'); 
-googleProvider.addScope('https://www.googleapis.com/auth/presentations'); 
-googleProvider.addScope('https://www.googleapis.com/auth/calendar'); 
-googleProvider.addScope('https://www.googleapis.com/auth/contacts');
-googleProvider.addScope('https://www.googleapis.com/auth/youtube.force-ssl');
+googleProvider.addScope('https://www.googleapis.com/auth/drive');
+googleProvider.addScope('https://mail.google.com/');
+googleProvider.addScope('https://www.googleapis.com/auth/calendar');
+googleProvider.addScope('https://www.googleapis.com/auth/youtube');
+
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export interface FirestoreErrorInfo {
   error: string;
