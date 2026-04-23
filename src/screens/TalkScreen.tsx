@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, Waves, Loader2, Sparkles, Files, Briefcase, Globe, Plane, User, LayoutGrid } from 'lucide-react';
+import { Mic, Waves, Loader2, Sparkles, Files, Briefcase, Globe, Plane, User, LayoutGrid, Mail, Video, Calendar, HardDrive } from 'lucide-react';
 import { useLiveAPI, TalkContext } from '../hooks/useLiveAudio';
 import { TabKey } from '../App';
 
@@ -315,30 +315,54 @@ export default function TalkScreen({
         </div>
 
         {/* Enhanced Context Panel */}
-        <div className="mb-6 bg-white/5 backdrop-blur-xl border border-[#D4AF37]/20 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+        <div className="mb-6 bg-white/5 backdrop-blur-xl border border-[#D4AF37]/20 rounded-2xl p-4 space-y-3 relative overflow-hidden shrink-0">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#D4AF37]/5 rounded-full blur-2xl"></div>
           <div className="flex justify-between items-center border-b border-white/5 pb-2 relative z-10">
             <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold flex items-center gap-2">
-              <Sparkles size={10} className="text-[#D4AF37]" /> Connected Context
+              <Sparkles size={10} className="text-[#D4AF37]" /> Beatrice Intelligence Layers
             </span>
-            <span className="text-[10px] text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-0.5 rounded-full">Active</span>
+            <span className="text-[10px] text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-0.5 rounded-full font-bold">Workspace Active</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 relative z-10">
-            <div className="bg-black/40 p-2 rounded-lg border border-white/5 flex items-center gap-2 group hover:border-[#D4AF37]/40 transition-colors">
-              <div className="w-2 h-2 rounded-full bg-blue-400 group-hover:shadow-[0_0_8px_#60a5fa] transition-shadow"></div>
-              <span className="text-[10px] font-medium text-white/80">Agenda 11:00</span>
+          
+          <div className="grid grid-cols-2 gap-3 relative z-10">
+            <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3 group hover:border-[#D4AF37]/40 transition-all duration-300">
+              <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <Mail size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-white/90">Gmail Sync</span>
+                <span className="text-[8px] uppercase tracking-widest text-[#32d74b] font-bold">Online</span>
+              </div>
             </div>
-            <div className="bg-black/40 p-2 rounded-lg border border-white/5 flex items-center gap-2 group hover:border-[#D4AF37]/40 transition-colors">
-              <div className="w-2 h-2 rounded-full bg-orange-400 group-hover:shadow-[0_0_8px_#fb923c] transition-shadow"></div>
-              <span className="text-[10px] font-medium text-white/80">NDA_Draft.pdf</span>
+
+            <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3 group hover:border-[#D4AF37]/40 transition-all duration-300">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                <HardDrive size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-white/90">Google Drive</span>
+                <span className="text-[8px] uppercase tracking-widest text-[#32d74b] font-bold">Online</span>
+              </div>
             </div>
-            <div className="bg-black/40 p-2 rounded-lg border border-white/5 flex items-center gap-2 group hover:border-[#D4AF37]/40 transition-colors">
-              <div className="w-2 h-2 rounded-full bg-green-400 group-hover:shadow-[0_0_8px_#4ade80] transition-shadow"></div>
-              <span className="text-[10px] font-medium text-white/80">Inbox (2)</span>
+
+            <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3 group hover:border-[#D4AF37]/40 transition-all duration-300">
+              <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black transition-colors">
+                <Calendar size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-white/90">Calendar</span>
+                <span className="text-[8px] uppercase tracking-widest text-[#32d74b] font-bold">Online</span>
+              </div>
             </div>
-            <div className="bg-black/40 p-2 rounded-lg border border-white/5 flex items-center gap-2 group hover:border-[#D4AF37]/40 transition-colors">
-              <div className="w-2 h-2 rounded-full bg-purple-400 group-hover:shadow-[0_0_8px_#c084fc] transition-shadow"></div>
-              <span className="text-[10px] font-medium text-white/80">WhatsApp</span>
+
+            <div className="bg-black/40 p-3 rounded-xl border border-white/5 flex items-center gap-3 group hover:border-[#D4AF37]/40 transition-all duration-300">
+              <div className="w-8 h-8 rounded-lg bg-red-600/10 flex items-center justify-center text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                <Video size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-white/90">YouTube v3</span>
+                <span className="text-[8px] uppercase tracking-widest text-[#32d74b] font-bold">Online</span>
+              </div>
             </div>
           </div>
         </div>
