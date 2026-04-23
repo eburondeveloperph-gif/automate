@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { UploadCloud, File, Trash2, CheckCircle2, Search } from 'lucide-react';
+import { UploadCloud, File, Trash2, CheckCircle2, Search, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+const MOCK_CONTENT: Record<number, string> = {
+  1: "Q3 FINANCIAL PROJECTIONS SUMMARY:\n\n- Q3 Revenue targets exceeded by 14.5% ($4.2M surplus).\n- Primary growth vectors: Enterprise AI integrations (up 32% YoY) and automated legal auditing tools.\n- Operational costs stabilized following Q2 server migrations.\n- Forecast for Q4 adjusted strictly upwards; expected momentum into European markets.",
+  2: "PARTNERSHIP AGREEMENT (DRAFT)\n\nThis Partnership Agreement is entered into by and between Horizon Tech and Eburon AI.\n\n1. TERM: The initial term shall be twenty-four (24) months.\n2. GOVERNANCE: A joint steering committee will be established, meeting quarterly.\n3. CONFIDENTIALITY: Both parties agree to mutual non-disclosure of proprietary algorithms.",
+};
 
 export default function DocsScreen() {
   const [docs] = useState([
@@ -15,8 +21,16 @@ export default function DocsScreen() {
     { id: 10, name: 'Investor_Update_Deck.pdf', status: 'cross-referencing', type: 'PDF' },
   ]);
 
+  const [previewDocId, setPreviewDocId] = useState<number | null>(null);
+
+  const getPreviewText = (id: number, name: string) => {
+    return MOCK_CONTENT[id] || `[System Extract]\n\nDocument: ${name}\nStatus: Actively monitored by Beatrice.\n\nExtracting primary context variables... The full unstructured matrix is stored in the cold layer. Please ask Beatrice specific questions about this document's contents.`;
+  };
+
+  const previewDoc = docs.find(d => d.id === previewDocId);
+
   return (
-    <div className="flex flex-col h-full px-4 pt-4 gap-6">
+    <div className="flex flex-col h-full px-4 pt-4 gap-6 relative">
       <div className="flex items-center justify-between">
         <h2 className="font-serif text-2xl tracking-tight text-white/90">Intelligence</h2>
         <span className="text-[10px] uppercase tracking-wider text-white/40">{docs.length} Docs Active</span>
@@ -52,14 +66,64 @@ export default function DocsScreen() {
             </div>
             
             <div className="flex gap-2">
-              <button className="flex-1 glass-panel-heavy py-2 rounded-lg text-[10px] uppercase tracking-wider hover:bg-white/10 transition-colors flex items-center justify-center gap-1.5 border border-white/5">
+              <button 
+                onClick={() => setPreviewDocId(doc.id)}
+                className="flex-1 glass-panel-heavy py-2 rounded-lg text-[10px] uppercase tracking-wider hover:bg-white/10 transition-colors flex items-center justify-center gap-1.5 border border-white/5"
+              >
                 <Search size={12} className="text-[#D4AF37]" />
-                <span className="text-[#D4AF37]">Analyze Concept</span>
+                <span className="text-[#D4AF37]">Preview / Analyze</span>
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Document Preview Overlay */}
+      <AnimatePresence>
+        {previewDoc && (
+          <motion.div
+            initial={{ opacity: 0, y: '100%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="absolute inset-x-0 bottom-0 top-0 z-40 bg-[#0A0A0B] p-4 flex flex-col"
+          >
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="p-2 bg-[#D4AF37]/10 rounded-lg text-[#D4AF37] shrink-0">
+                  <File size={16} />
+                </div>
+                <div className="flex flex-col overflow-hidden">
+                  <h3 className="text-sm font-medium text-white/90 truncate">{previewDoc.name}</h3>
+                  <span className="text-[10px] uppercase tracking-wider text-[#D4AF37]">Active Memory</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPreviewDocId(null)}
+                className="p-2 glass-panel-heavy rounded-full text-white/50 hover:text-white transition-colors shrink-0 border border-white/10"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 glass-panel rounded-2xl p-6 overflow-y-auto hide-scrollbar border border-white/10 relative">
+              <div className="absolute top-0 right-0 p-4 pointer-events-none opacity-[0.03]">
+                <File size={120} />
+              </div>
+              <pre className="text-xs text-white/80 font-mono whitespace-pre-wrap leading-relaxed relative z-10">
+                {getPreviewText(previewDoc.id, previewDoc.name)}
+              </pre>
+            </div>
+            
+            <button 
+              className="mt-4 w-full py-3 rounded-xl bg-[#D4AF37] text-black text-xs uppercase tracking-wider font-bold hover:bg-[#D4AF37]/90 transition-colors shadow-[0_0_15px_rgba(212,175,55,0.2)] shrink-0"
+              onClick={() => setPreviewDocId(null)}
+            >
+              Close Context
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

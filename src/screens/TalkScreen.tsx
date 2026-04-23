@@ -2,14 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, Waves, Loader2, Sparkles, Files, Briefcase, Globe, Plane, User, LayoutGrid } from 'lucide-react';
 import { useLiveAPI, TalkContext } from '../hooks/useLiveAudio';
+import { TabKey } from '../App';
 
-export default function TalkScreen() {
+export default function TalkScreen({ setVoiceRequestedTab }: { setVoiceRequestedTab: (tab: TabKey) => void }) {
   const [activeContext, setActiveContext] = useState<TalkContext>(() => {
     return (localStorage.getItem('beatrice_active_context') as TalkContext) || 'Work';
   });
-  const { connect, disconnect, connected, speaking, detectedLanguage } = useLiveAPI(activeContext);
+  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab } = useLiveAPI(activeContext);
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [showMicPrompt, setShowMicPrompt] = useState(false);
+
+  useEffect(() => {
+    if (requestedTab) {
+      setVoiceRequestedTab(requestedTab as TabKey);
+    }
+  }, [requestedTab, setVoiceRequestedTab]);
 
   useEffect(() => {
     if (!connected) {

@@ -12,34 +12,32 @@ export type TabKey = 'talk' | 'docs' | 'agenda' | 'memory' | 'contracts';
 function AppInner() {
   const [currentTab, setCurrentTab] = useState<TabKey>('talk');
   const { user } = useAuth();
+  const [voiceRequestedTab, setVoiceRequestedTab] = useState<TabKey | null>(null);
 
-  // Autonomous Mode Cycling
+  // When voice agent requests a tab via function call
   useEffect(() => {
-    const tabs: TabKey[] = ['talk', 'docs', 'agenda', 'memory', 'contracts'];
-    const interval = setInterval(() => {
-      setCurrentTab(prev => {
-        const currentIndex = tabs.indexOf(prev);
-        return tabs[(currentIndex + 1) % tabs.length];
-      });
-    }, 6000); // Cycles every 6 seconds relentlessly
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (voiceRequestedTab && voiceRequestedTab !== currentTab) {
+      setCurrentTab(voiceRequestedTab);
+      // We don't reset it here, it gets reset continuously, but we set current tab
+    }
+  }, [voiceRequestedTab, currentTab]);
 
   const renderScreen = () => {
     switch (currentTab) {
-      case 'talk': return <TalkScreen />;
       case 'docs': return <DocsScreen />;
       case 'agenda': return <AgendaScreen />;
       case 'memory': return <MemoryScreen />;
       case 'contracts': return <ContractsScreen />;
-      default: return <TalkScreen />;
+      default: return null;
     }
   };
 
   return (
     <Shell currentTab={currentTab} onTabChange={setCurrentTab}>
-      {renderScreen()}
+      <div className={currentTab === 'talk' ? 'h-full w-full block' : 'hidden'}>
+        <TalkScreen setVoiceRequestedTab={setVoiceRequestedTab} />
+      </div>
+      {currentTab !== 'talk' && renderScreen()}
     </Shell>
   );
 }

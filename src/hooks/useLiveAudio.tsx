@@ -48,6 +48,7 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
   const [transcript, setTranscript] = useState<{ role: 'jo' | 'beatrice', text: string, time: string }[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [detectedLanguage, setDetectedLanguage] = useState<{input: string, output: string, confidence: string} | null>(null);
+  const [requestedTab, setRequestedTab] = useState<string | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const nextTimeRef = useRef<number>(0);
@@ -184,19 +185,35 @@ When you speak, also call the report_language function to report the detected in
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           tools: [{
-            functionDeclarations: [{
-              name: 'report_language',
-              description: 'Report the detected spoken language to the UI.',
-              parameters: {
-                type: Type.OBJECT,
-                properties: {
-                  inputLanguage: { type: Type.STRING, description: 'The detected language of the user input' },
-                  outputLanguage: { type: Type.STRING, description: 'The language you are responding in' },
-                  confidence: { type: Type.STRING, description: 'Confidence level like High, Medium, Low' }
-                },
-                required: ['inputLanguage', 'outputLanguage', 'confidence']
+            functionDeclarations: [
+              {
+                name: 'report_language',
+                description: 'Report the detected spoken language to the UI.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    inputLanguage: { type: Type.STRING, description: 'The detected language of the user input' },
+                    outputLanguage: { type: Type.STRING, description: 'The language you are responding in' },
+                    confidence: { type: Type.STRING, description: 'Confidence level like High, Medium, Low' }
+                  },
+                  required: ['inputLanguage', 'outputLanguage', 'confidence']
+                }
+              },
+              {
+                name: 'navigate_to_tab',
+                description: 'Visually navigate the app to a specific screen when the user asks you to look at something, go somewhere, or audit something. E.g. "look at the contracts"',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    tab: { 
+                      type: Type.STRING, 
+                      description: 'The tab key to navigate to: [docs, agenda, memory, contracts, talk]' 
+                    }
+                  },
+                  required: ['tab']
+                }
               }
-            }]
+            ]
           }]
         },
         callbacks: {
@@ -245,6 +262,20 @@ When you speak, also call the report_language function to report the detected in
                     sessionPromiseRef.current?.then((session: any) => {
                       session.sendToolResponse({
                         functionResponses: [{ id: call.id, name: call.name, response: { success: true } }]
+                      });
+                    });
+                  } else if (call.name === 'navigate_to_tab') {
+                     const args = call.args as any;
+                     if (args.tab) {
+                       setRequestedTab(args.tab);
+                       
+                       // Reset after triggering so it can be re-triggered later
+                       setTimeout(() => setRequestedTab(null), 500); 
+                     }
+                     // Reply
+                     sessionPromiseRef.current?.then((session: any) => {
+                      session.sendToolResponse({
+                        functionResponses: [{ id: call.id, name: call.name, response: { success: true, newTab: args.tab } }]
                       });
                     });
                   }
@@ -302,5 +333,5 @@ When you speak, also call the report_language function to report the detected in
     }
   };
 
-  return { connect, disconnect, connected, speaking, transcript, detectedLanguage };
+  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab };
 }
