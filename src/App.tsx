@@ -6,6 +6,7 @@ import DocsScreen from './screens/DocsScreen';
 import AgendaScreen from './screens/AgendaScreen';
 import MemoryScreen from './screens/MemoryScreen';
 import ContractsScreen from './screens/ContractsScreen';
+import AuthScreen from './screens/AuthScreen';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 
 export type TabKey = 'talk' | 'docs' | 'agenda' | 'memory' | 'contracts';
@@ -29,6 +30,10 @@ function AppInner() {
       setCurrentTab(voiceRequestedTab);
     }
   }, [voiceRequestedTab, currentTab]);
+
+  if (!user) {
+    return <AuthScreen />;
+  }
 
   const renderScreen = () => {
     switch (currentTab) {
