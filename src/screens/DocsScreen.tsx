@@ -22,12 +22,17 @@ export default function DocsScreen() {
   ]);
 
   const [previewDocId, setPreviewDocId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const getPreviewText = (id: number, name: string) => {
     return MOCK_CONTENT[id] || `[System Extract]\n\nDocument: ${name}\nStatus: Actively monitored by Beatrice.\n\nExtracting primary context variables... The full unstructured matrix is stored in the cold layer. Please ask Beatrice specific questions about this document's contents.`;
   };
 
   const previewDoc = docs.find(d => d.id === previewDocId);
+  
+  const filteredDocs = docs.filter(doc => 
+    doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col h-full px-4 pt-4 gap-6 relative">
@@ -47,11 +52,44 @@ export default function DocsScreen() {
       </div>
 
       <div className="flex flex-col gap-3 mt-2 shrink-0">
-        <h3 className="text-[10px] uppercase tracking-widest text-white/40 px-1 border-b border-white/10 pb-2">Indexed Knowledge</h3>
+        <div className="flex items-center justify-between px-1 border-b border-white/10 pb-2 mb-1">
+          <h3 className="text-[10px] uppercase tracking-widest text-white/40">Indexed Knowledge</h3>
+        </div>
         
-        {docs.map(doc => (
-          <div key={doc.id} className="glass-panel rounded-xl p-4 flex flex-col gap-3 group relative overflow-hidden">
-            <div className="flex items-start gap-3">
+        {/* Search Bar */}
+        <div className="relative shrink-0 mb-3">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={14} className="text-white/40" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search documents by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-9 pr-8 text-sm font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        
+        {filteredDocs.length === 0 ? (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="text-xs text-white/40 text-center py-8 border border-dashed border-white/10 rounded-2xl"
+          >
+            No documents match your search.
+          </motion.div>
+        ) : (
+          filteredDocs.map(doc => (
+            <div key={doc.id} className="glass-panel rounded-xl p-4 flex flex-col gap-3 group relative overflow-hidden">
+              <div className="flex items-start gap-3">
               <div className="p-2 glass-panel-heavy rounded-lg text-white/70">
                 <File size={16} />
               </div>
@@ -75,7 +113,7 @@ export default function DocsScreen() {
               </button>
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Document Preview Overlay */}
