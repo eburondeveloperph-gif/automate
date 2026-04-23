@@ -28,6 +28,29 @@ export default function MemoryScreen() {
     }
   };
 
+  const getTypeStyles = (type: MemoryType) => {
+    switch (type) {
+      case 'preference': return {
+        bg: 'bg-[#D4AF37]/5',
+        border: 'border-[#D4AF37]/20 group-hover:border-[#D4AF37]/40',
+        text: 'text-[#D4AF37]',
+        badge: 'bg-[#D4AF37]/10 text-[#D4AF37]'
+      };
+      case 'fact': return {
+        bg: 'bg-blue-400/5',
+        border: 'border-blue-400/20 group-hover:border-blue-400/40',
+        text: 'text-blue-400',
+        badge: 'bg-blue-400/10 text-blue-400'
+      };
+      case 'summary': return {
+        bg: 'bg-emerald-400/5',
+        border: 'border-emerald-400/20 group-hover:border-emerald-400/40',
+        text: 'text-emerald-400',
+        badge: 'bg-emerald-400/10 text-emerald-400'
+      };
+    }
+  };
+
   const handleAddMemory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newContent.trim()) return;
@@ -177,39 +200,42 @@ export default function MemoryScreen() {
               No matching memories found.
             </motion.p>
           ) : (
-            filteredMemories.map((memory) => (
-              <motion.div 
-                key={memory.id}
-                layout
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="glass-panel rounded-2xl p-4 flex flex-col gap-3 group relative border border-white/5 hover:border-white/10 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    {getTypeIcon(memory.type)}
-                    <h3 className="text-[10px] uppercase tracking-widest text-white/50 font-medium">
-                      {memory.type}
-                    </h3>
+            filteredMemories.map((memory) => {
+              const styles = getTypeStyles(memory.type);
+              return (
+                <motion.div 
+                  key={memory.id}
+                  layout
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className={`backdrop-blur-xl rounded-2xl p-4 flex flex-col gap-3 group relative border transition-colors ${styles.bg} ${styles.border}`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className={`flex items-center gap-2 px-2 py-1 rounded-md ${styles.badge}`}>
+                      {getTypeIcon(memory.type)}
+                      <h3 className={`text-[9px] uppercase tracking-widest font-bold ${styles.text}`}>
+                        {memory.type}
+                      </h3>
+                    </div>
+                    <button 
+                      onClick={() => removeMemory(memory.id)}
+                      className="opacity-0 group-hover:opacity-100 text-rose-400 hover:bg-rose-400/10 p-1.5 rounded-full transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => removeMemory(memory.id)}
-                    className="opacity-0 group-hover:opacity-100 text-rose-400 hover:bg-rose-400/10 p-1.5 rounded-full transition-all"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-                <p className="text-sm font-serif leading-relaxed text-white/80 whitespace-pre-wrap">
-                  {memory.content}
-                </p>
-                <div className="flex items-center justify-between mt-1 pt-3 border-t border-white/5">
-                  <span className="text-[9px] text-white/30 uppercase tracking-wider">
-                    {memory.createdAt.toLocaleDateString()} {memory.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              </motion.div>
-            ))
+                  <p className="text-sm font-serif leading-relaxed text-white/90 whitespace-pre-wrap">
+                    {memory.content}
+                  </p>
+                  <div className="flex items-center justify-between mt-1 pt-3 border-t border-white/5">
+                    <span className="text-[9px] text-white/30 uppercase tracking-wider">
+                      {memory.createdAt.toLocaleDateString()} {memory.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </AnimatePresence>
       </div>
