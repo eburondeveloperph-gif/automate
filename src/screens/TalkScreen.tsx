@@ -4,7 +4,15 @@ import { Mic, Waves, Loader2, Sparkles, Files, Briefcase, Globe, Plane, User, La
 import { useLiveAPI, TalkContext } from '../hooks/useLiveAudio';
 import { TabKey } from '../App';
 
-export default function TalkScreen({ setVoiceRequestedTab }: { setVoiceRequestedTab: (tab: TabKey) => void }) {
+export default function TalkScreen({ 
+  setVoiceRequestedTab,
+  onConnectionChange,
+  onSpeakingChange
+}: { 
+  setVoiceRequestedTab: (tab: TabKey) => void;
+  onConnectionChange?: (connected: boolean) => void;
+  onSpeakingChange?: (speaking: boolean) => void;
+}) {
   const [activeContext, setActiveContext] = useState<TalkContext>(() => {
     return (localStorage.getItem('beatrice_active_context') as TalkContext) || 'Work';
   });
@@ -19,6 +27,9 @@ export default function TalkScreen({ setVoiceRequestedTab }: { setVoiceRequested
   }, [requestedTab, setVoiceRequestedTab]);
 
   useEffect(() => {
+    if (onConnectionChange) onConnectionChange(connected);
+    if (onSpeakingChange) onSpeakingChange(speaking);
+
     if (!connected) {
       setOrbState('idle');
     } else if (speaking) {
@@ -26,7 +37,7 @@ export default function TalkScreen({ setVoiceRequestedTab }: { setVoiceRequested
     } else {
       setOrbState('listening');
     }
-  }, [connected, speaking]);
+  }, [connected, speaking, onConnectionChange, onSpeakingChange]);
 
   const handleOrbClick = () => {
     if (!connected) {

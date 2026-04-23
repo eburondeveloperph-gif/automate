@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import Shell from './components/layout/Shell';
 import TalkScreen from './screens/TalkScreen';
 import DocsScreen from './screens/DocsScreen';
@@ -13,12 +14,15 @@ function AppInner() {
   const [currentTab, setCurrentTab] = useState<TabKey>('talk');
   const { user } = useAuth();
   const [voiceRequestedTab, setVoiceRequestedTab] = useState<TabKey | null>(null);
+  
+  // Voice state for global UI overlay
+  const [isVoiceConnected, setIsVoiceConnected] = useState(false);
+  const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
 
   // When voice agent requests a tab via function call
   useEffect(() => {
     if (voiceRequestedTab && voiceRequestedTab !== currentTab) {
       setCurrentTab(voiceRequestedTab);
-      // We don't reset it here, it gets reset continuously, but we set current tab
     }
   }, [voiceRequestedTab, currentTab]);
 
@@ -33,12 +37,47 @@ function AppInner() {
   };
 
   return (
-    <Shell currentTab={currentTab} onTabChange={setCurrentTab}>
-      <div className={currentTab === 'talk' ? 'h-full w-full block' : 'hidden'}>
-        <TalkScreen setVoiceRequestedTab={setVoiceRequestedTab} />
-      </div>
-      {currentTab !== 'talk' && renderScreen()}
-    </Shell>
+    <>
+      <Shell currentTab={currentTab} onTabChange={setCurrentTab}>
+        <div className={currentTab === 'talk' ? 'h-full w-full block' : 'hidden'}>
+          <TalkScreen 
+            setVoiceRequestedTab={setVoiceRequestedTab} 
+            onConnectionChange={setIsVoiceConnected}
+            onSpeakingChange={setIsVoiceSpeaking}
+          />
+        </div>
+        {currentTab !== 'talk' && renderScreen()}
+      </Shell>
+      
+      {/* Floating Global Orb when connected and not on Talk screen */}
+      <AnimatePresence>
+        {isVoiceConnected && currentTab !== 'talk' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            className="absolute bottom-24 right-4 z-50 pointer-events-none"
+            onClick={() => setCurrentTab('talk')}
+          >
+            <div className="relative flex items-center justify-center p-2 cursor-pointer pointer-events-auto group">
+              <div className="absolute w-16 h-16 bg-[#D4AF37]/20 rounded-full blur-xl group-hover:bg-[#D4AF37]/30 transition-colors"></div>
+              <div className="w-12 h-12 rounded-full border border-[#D4AF37]/50 bg-black/80 backdrop-blur flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+                <div className="w-full h-full rounded-full flex items-center justify-center relative overflow-hidden">
+                   <motion.div 
+                     animate={{ 
+                       rotate: isVoiceSpeaking ? -360 : 360,
+                       scale: isVoiceSpeaking ? [1, 1.2, 1, 1.1, 1] : [1, 1.05, 1]
+                     }}
+                     transition={{ repeat: Infinity, duration: isVoiceSpeaking ? 1.5 : 4, ease: "easeInOut" }}
+                     className="w-10 h-10 rounded-full border border-[#D4AF37] border-t-transparent opacity-80"
+                   />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
