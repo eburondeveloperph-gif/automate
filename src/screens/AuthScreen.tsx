@@ -31,7 +31,7 @@ export default function AuthScreen() {
     } catch (err: any) {
       console.error(err);
       if (err.message?.includes('auth/unauthorized-domain')) {
-         setError('ACTION REQUIRED: Add this domain to Firebase Authorized Domains in your console.');
+         setError(`ACTION REQUIRED: Add ${window.location.hostname} to authorized domains in Firebase Console.`);
       } else {
          setError(err.message || 'Failed to authenticate');
       }

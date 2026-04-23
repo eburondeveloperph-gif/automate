@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, LiveServerMessage, Modality, Type } from "@google/genai";
+import { GoogleGenAI, LiveServerMessage, Modality, Type, MediaResolution } from "@google/genai";
 import { db, auth as firebaseAuth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -286,23 +286,30 @@ LANGUAGE:
 - Default to English. Automatically adapt to whatever language Jo speaks (Dutch, French, etc.). 
 - Call 'report_language' whenever the language shifts.
 
-When Jo asks to search for something, use 'drive_search', 'gmail_search', or 'youtube_search' accordingly. Always summarize the top results for him verbally.`;
+When Jo asks for real-time information, news, or something you don't know, use 'googleSearch'. For workspace queries, use 'drive_search', 'gmail_search', or 'youtube_search' accordingly. Always summarize results verbally.`;
 
 
       sessionPromiseRef.current = ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        model: "models/gemini-3.1-flash-live-preview",
         config: {
           responseModalities: [Modality.AUDIO],
+          mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } }
+          },
+          contextWindowCompression: {
+            triggerTokens: '104857',
+            slidingWindow: { targetTokens: '52428' },
           },
           systemInstruction: sysInstruct,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
-          tools: [{
-            functionDeclarations: [
-              {
-                name: 'report_language',
+          tools: [
+            { googleSearch: {} },
+            {
+              functionDeclarations: [
+                {
+                  name: 'report_language',
                 description: 'Report the detected spoken language to the UI.',
                 parameters: {
                   type: Type.OBJECT,
@@ -724,7 +731,7 @@ When Jo asks to search for something, use 'drive_search', 'gmail_search', or 'yo
          // Wait a moment for network
          setTimeout(() => {
            session.sendRealtimeInput({
-             text: "I have just connected. Please greet me as instructed."
+             text: "I have just connected. Please greet me as instructed. Note: Google Search and high-fidelity vision are now active."
            });
          }, 500);
       });
