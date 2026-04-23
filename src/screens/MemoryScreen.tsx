@@ -12,6 +12,9 @@ export default function MemoryScreen() {
   const [newContent, setNewContent] = useState('');
   const [newType, setNewType] = useState<MemoryType>('fact');
   const [isAdding, setIsAdding] = useState(false);
+  
+  // State for delete confirmation
+  const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
 
   const filters: { id: 'all' | MemoryType, label: string }[] = [
     { id: 'all', label: 'All Context' },
@@ -219,7 +222,7 @@ export default function MemoryScreen() {
                       </h3>
                     </div>
                     <button 
-                      onClick={() => removeMemory(memory.id)}
+                      onClick={() => setMemoryToDelete(memory.id)}
                       className="opacity-0 group-hover:opacity-100 text-rose-400 hover:bg-rose-400/10 p-1.5 rounded-full transition-all"
                     >
                       <Trash2 size={12} />
@@ -239,6 +242,59 @@ export default function MemoryScreen() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {memoryToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-[#0A0A0B]/80 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              className="bg-[#111112] border border-white/10 rounded-2xl p-6 flex flex-col max-w-sm w-full gap-5 shadow-2xl"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-rose-400/10 flex items-center justify-center text-rose-400 shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-medium text-white/90">Delete Memory</h3>
+                  <p className="text-[10px] uppercase tracking-wider text-rose-400/80">Permanent Action</p>
+                </div>
+              </div>
+              
+              <p className="text-xs text-white/60 font-light leading-relaxed mb-1">
+                Are you sure you want to permanently erase this memory from Beatrice's context window?
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setMemoryToDelete(null)}
+                  className="flex-1 py-3 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 transition-colors text-xs font-medium uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (memoryToDelete) {
+                      removeMemory(memoryToDelete);
+                      setMemoryToDelete(null);
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-rose-400/20 text-rose-400 hover:bg-rose-400/30 transition-colors text-xs font-bold uppercase tracking-wider"
+                >
+                  Erase
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
