@@ -2,9 +2,29 @@ import React, { useState } from 'react';
 import { UploadCloud, File, Trash2, CheckCircle2, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const MOCK_CONTENT: Record<number, string> = {
-  1: "Q3 FINANCIAL PROJECTIONS SUMMARY:\n\n- Q3 Revenue targets exceeded by 14.5% ($4.2M surplus).\n- Primary growth vectors: Enterprise AI integrations (up 32% YoY) and automated legal auditing tools.\n- Operational costs stabilized following Q2 server migrations.\n- Forecast for Q4 adjusted strictly upwards; expected momentum into European markets.",
-  2: "PARTNERSHIP AGREEMENT (DRAFT)\n\nThis Partnership Agreement is entered into by and between Horizon Tech and Eburon AI.\n\n1. TERM: The initial term shall be twenty-four (24) months.\n2. GOVERNANCE: A joint steering committee will be established, meeting quarterly.\n3. CONFIDENTIALITY: Both parties agree to mutual non-disclosure of proprietary algorithms.",
+const MOCK_CONTENT: Record<number, { text: string; entities: Array<{ label: string; type: 'person' | 'org' | 'date' | 'amount' | 'concept' }> }> = {
+  1: {
+    text: "Q3 FINANCIAL PROJECTIONS SUMMARY:\n\n- Q3 Revenue targets exceeded by 14.5% ($4.2M surplus).\n- Primary growth vectors: Enterprise AI integrations (up 32% YoY) and automated legal auditing tools.\n- Operational costs stabilized following Q2 server migrations.\n- Forecast for Q4 adjusted strictly upwards; expected momentum into European markets.",
+    entities: [
+      { label: "Q3", type: "date" },
+      { label: "+14.5%", type: "amount" },
+      { label: "$4.2M Surplus", type: "amount" },
+      { label: "Enterprise AI integrations", type: "concept" },
+      { label: "+32% YoY", type: "amount" },
+      { label: "Q2", type: "date" },
+      { label: "Q4", type: "date" }
+    ]
+  },
+  2: {
+    text: "PARTNERSHIP AGREEMENT (DRAFT)\n\nThis Partnership Agreement is entered into by and between Horizon Tech and Eburon AI.\n\n1. TERM: The initial term shall be twenty-four (24) months.\n2. GOVERNANCE: A joint steering committee will be established, meeting quarterly.\n3. CONFIDENTIALITY: Both parties agree to mutual non-disclosure of proprietary algorithms.",
+    entities: [
+      { label: "Horizon Tech", type: "org" },
+      { label: "Eburon AI", type: "org" },
+      { label: "24 months", type: "date" },
+      { label: "Joint Steering Committee", type: "org" },
+      { label: "Quarterly", type: "date" }
+    ]
+  }
 };
 
 export default function DocsScreen({ 
@@ -50,15 +70,35 @@ export default function DocsScreen({
     }
   }, [voiceRequestedDocSearch]);
 
-  const getPreviewText = (id: number, name: string) => {
-    return MOCK_CONTENT[id] || `[System Extract]\n\nDocument: ${name}\nStatus: Actively monitored by Beatrice.\n\nExtracting primary context variables... The full unstructured matrix is stored in the cold layer. Please ask Beatrice specific questions about this document's contents.`;
+  const getPreviewData = (id: number, name: string) => {
+    return MOCK_CONTENT[id] || {
+      text: `[System Extract]\n\nDocument: ${name}\nStatus: Actively monitored by Beatrice.\n\nExtracting primary context variables... The full unstructured matrix is stored in the cold layer. Please ask Beatrice specific questions about this document's contents.`,
+      entities: [
+        { label: "Beatrice", type: "person" },
+        { label: "Cold Layer", type: "concept" },
+        { label: "Unstructured Matrix", type: "concept" }
+      ]
+    };
   };
 
   const previewDoc = docs.find(d => d.id === previewDocId);
+  const previewData = previewDoc ? getPreviewData(previewDoc.id, previewDoc.name) : null;
   
   const filteredDocs = docs.filter(doc => 
     doc.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getEntityStyles = (type: string) => {
+    switch(type) {
+      case 'amount': return 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20';
+      case 'date': return 'bg-amber-400/10 text-amber-400 border-amber-400/20';
+      case 'org': return 'bg-blue-400/10 text-blue-400 border-blue-400/20';
+      case 'person': return 'bg-purple-400/10 text-purple-400 border-purple-400/20';
+      case 'concept': 
+      default:
+        return 'bg-slate-400/10 text-slate-400 border-slate-400/20';
+    }
+  };
 
   return (
     <div className="flex flex-col h-full px-4 pt-4 gap-6 relative">
@@ -144,7 +184,7 @@ export default function DocsScreen({
 
       {/* Document Preview Overlay */}
       <AnimatePresence>
-        {previewDoc && (
+        {previewDoc && previewData && (
           <motion.div
             initial={{ opacity: 0, y: '100%' }}
             animate={{ opacity: 1, y: 0 }}
@@ -170,13 +210,32 @@ export default function DocsScreen({
               </button>
             </div>
 
-            <div className="flex-1 glass-panel rounded-2xl p-6 overflow-y-auto hide-scrollbar border border-white/10 relative">
+            <div className="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden border border-white/10 relative">
               <div className="absolute top-0 right-0 p-4 pointer-events-none opacity-[0.03]">
                 <File size={120} />
               </div>
-              <pre className="text-xs text-white/80 font-mono whitespace-pre-wrap leading-relaxed relative z-10">
-                {getPreviewText(previewDoc.id, previewDoc.name)}
-              </pre>
+
+              {/* Entities Section */}
+              {previewData.entities && previewData.entities.length > 0 && (
+                <div className="p-4 border-b border-white/10 bg-white/[0.01] overflow-x-auto hide-scrollbar shrink-0">
+                  <h4 className="text-[9px] uppercase tracking-widest text-white/40 mb-3 px-1">Extracted Entities</h4>
+                  <div className="flex gap-2 w-max">
+                    {previewData.entities.map((entity, i) => (
+                      <div key={i} className={`px-2.5 py-1 rounded-md border text-[10px] uppercase tracking-wider ${getEntityStyles(entity.type)} flex items-center gap-1.5`}>
+                         <span className="font-bold">{entity.label}</span>
+                         <span className="opacity-50 text-[8px] border-l border-current pl-1.5">{entity.type}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Document Text */}
+              <div className="p-6 overflow-y-auto hide-scrollbar flex-1">
+                <pre className="text-[11px] text-white/80 font-mono whitespace-pre-wrap leading-relaxed relative z-10 w-full break-words">
+                  {previewData.text}
+                </pre>
+              </div>
             </div>
             
             <button 
