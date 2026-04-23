@@ -43,7 +43,7 @@ function AppInner() {
   return (
     <>
       <Shell currentTab={currentTab} onTabChange={setCurrentTab}>
-        <div className={currentTab === 'talk' ? 'h-full w-full block' : 'hidden'}>
+        <div className={`${currentTab === 'talk' ? 'relative z-10 block' : 'absolute inset-0 opacity-0 pointer-events-none z-0'} h-full w-full transition-opacity duration-300`}>
           <TalkScreen 
             setVoiceRequestedTab={setVoiceRequestedTab} 
             setVoiceRequestedDocPreview={setVoiceRequestedDocPreview}
@@ -54,7 +54,11 @@ function AppInner() {
             onSpeakingChange={setIsVoiceSpeaking}
           />
         </div>
-        {currentTab !== 'talk' && renderScreen()}
+        {currentTab !== 'talk' && (
+          <div className="relative z-10 h-full w-full bg-[#0A0A0B]">
+            {renderScreen()}
+          </div>
+        )}
       </Shell>
       
       {/* Floating Global Orb when connected and not on Talk screen */}
@@ -65,9 +69,11 @@ function AppInner() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             className="absolute bottom-24 right-4 z-50 pointer-events-none"
-            onClick={() => setCurrentTab('talk')}
           >
-            <div className="relative flex items-center justify-center p-2 cursor-pointer pointer-events-auto group">
+            <div 
+              onClick={() => setCurrentTab('talk')}
+              className="relative flex items-center justify-center p-2 cursor-pointer pointer-events-auto group"
+            >
               <div className="absolute w-16 h-16 bg-[#D4AF37]/20 rounded-full blur-xl group-hover:bg-[#D4AF37]/30 transition-colors"></div>
               <div className="w-12 h-12 rounded-full border border-[#D4AF37]/50 bg-black/80 backdrop-blur flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.4)]">
                 <div className="w-full h-full rounded-full flex items-center justify-center relative overflow-hidden">

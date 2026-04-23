@@ -159,6 +159,17 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
       const source = audioCtxRef.current!.createMediaStreamSource(stream);
       const workletNode = new AudioWorkletNode(audioCtxRef.current!, 'recorder-processor');
       
+      // Keep-alive silent oscillator to prevent browser from throttling this tab when in background (or blurred)
+      if (!(window as any).keepAliveOsc) {
+        const osc = audioCtxRef.current!.createOscillator();
+        const gain = audioCtxRef.current!.createGain();
+        gain.gain.value = 0.00001; // essentially silent
+        osc.connect(gain);
+        gain.connect(audioCtxRef.current!.destination);
+        osc.start();
+        (window as any).keepAliveOsc = osc;
+      }
+
       // Play activation chime
       playChime();
 
