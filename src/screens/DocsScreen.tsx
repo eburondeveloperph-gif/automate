@@ -7,7 +7,13 @@ const MOCK_CONTENT: Record<number, string> = {
   2: "PARTNERSHIP AGREEMENT (DRAFT)\n\nThis Partnership Agreement is entered into by and between Horizon Tech and Eburon AI.\n\n1. TERM: The initial term shall be twenty-four (24) months.\n2. GOVERNANCE: A joint steering committee will be established, meeting quarterly.\n3. CONFIDENTIALITY: Both parties agree to mutual non-disclosure of proprietary algorithms.",
 };
 
-export default function DocsScreen({ voiceRequestedDocPreview }: { voiceRequestedDocPreview?: string | null }) {
+export default function DocsScreen({ 
+  voiceRequestedDocPreview,
+  voiceRequestedDocSearch
+}: { 
+  voiceRequestedDocPreview?: string | null;
+  voiceRequestedDocSearch?: string | null;
+}) {
   const [docs] = useState([
     { id: 1, name: 'Q3_Financial_Projections.pdf', status: 'indexed', type: 'PDF' },
     { id: 2, name: 'Partnership_Agreement_Draft.docx', status: 'indexed', type: 'DOCX' },
@@ -33,6 +39,16 @@ export default function DocsScreen({ voiceRequestedDocPreview }: { voiceRequeste
       }
     }
   }, [voiceRequestedDocPreview, docs]);
+
+  // Handle voice-driven document searches
+  React.useEffect(() => {
+    if (voiceRequestedDocSearch !== null && voiceRequestedDocSearch !== undefined) {
+      setSearchQuery(voiceRequestedDocSearch);
+      
+      // If we are opening a search result, let's close the preview overlay if open to reveal the list
+      setPreviewDocId(null);
+    }
+  }, [voiceRequestedDocSearch]);
 
   const getPreviewText = (id: number, name: string) => {
     return MOCK_CONTENT[id] || `[System Extract]\n\nDocument: ${name}\nStatus: Actively monitored by Beatrice.\n\nExtracting primary context variables... The full unstructured matrix is stored in the cold layer. Please ask Beatrice specific questions about this document's contents.`;

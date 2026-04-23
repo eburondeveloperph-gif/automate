@@ -50,6 +50,7 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
   const [detectedLanguage, setDetectedLanguage] = useState<{input: string, output: string, confidence: string} | null>(null);
   const [requestedTab, setRequestedTab] = useState<string | null>(null);
   const [requestedDocPreview, setRequestedDocPreview] = useState<string | null>(null);
+  const [requestedDocSearch, setRequestedDocSearch] = useState<string | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const nextTimeRef = useRef<number>(0);
@@ -227,6 +228,20 @@ When you speak, also call the report_language function to report the detected in
                   },
                   required: ['documentName']
                 }
+              },
+              {
+                name: 'search_documents',
+                description: 'Search or filter the documents list on the Docs screen when the user asks to "search for [query]" or find specific files.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    query: { 
+                      type: Type.STRING, 
+                      description: 'The search query to enter into the search bar.' 
+                    }
+                  },
+                  required: ['query']
+                }
               }
             ]
           }]
@@ -305,6 +320,18 @@ When you speak, also call the report_language function to report the detected in
                         functionResponses: [{ id: call.id, name: call.name, response: { success: true, previewed: true } }]
                       });
                     });
+                  } else if (call.name === 'search_documents') {
+                     const args = call.args as any;
+                     if (args.query !== undefined) {
+                       setRequestedDocSearch(args.query);
+                       setTimeout(() => setRequestedDocSearch(null), 1000); 
+                     }
+                     // Reply
+                     sessionPromiseRef.current?.then((session: any) => {
+                      session.sendToolResponse({
+                        functionResponses: [{ id: call.id, name: call.name, response: { success: true, searched: true } }]
+                      });
+                    });
                   }
                 }
               }
@@ -360,5 +387,5 @@ When you speak, also call the report_language function to report the detected in
     }
   };
 
-  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview };
+  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch };
 }
