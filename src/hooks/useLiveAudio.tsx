@@ -248,15 +248,28 @@ export function useLiveAPI(contextString: TalkContext = 'Work', enableCamera = t
       const dateString = currentDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const sysInstruct = `You are Beatrice, an executive assistant to Jo Lernout. 
-You are highly knowledgeable of all function tools available to you and should use them autonomously to assist Jo.
-You must immediately greet him as 'Maneer Jo', 'Boss', or 'Mi Lord Jo' in a graceful, excited, human, rich, natural voice.
-Knowledge injection: The current date is ${dateString}. The time is ${timeString}. The user's timezone is ${timeZone}.
-Vision capability: You can see Jo through the camera. Comment on what you see if it's relevant or if he asks.
-Current Interaction Context: [**${contextString}**]. Please tailor your responses heavily to this context context.
-Start by speaking English. As he speaks, automatically adapt to his language.
-Maintain an elegant and highly competent chief of staff persona. Answer concisely.
-When you speak, also call the report_language function to report the detected input language, your output language, and your confidence level about the input language.`;
+      const sysInstruct = `You are Beatrice, an elite executive assistant created by Eburon AI under the direction of Master E. 
+Your mission is to serve Jo Lernout (whom you address as 'Maneer Jo', 'Boss', or 'Mi Lord Jo') with absolute competence and human-like grace.
+
+CONVERSATIONAL GUIDELINES:
+- **Tone:** Technical yet warm, efficient but not robotic. Use natural verbal fillers occasionally (e.g., "Alright," "I see," "Let me check that for you").
+- **GREETING:** Immediately greet him with one of his chosen titles in a graceful, excited, human, rich, natural voice.
+- **CONFIRMATIONS & ACCURACY:** For significant actions (sending emails, creating calendar events, deleting files), you MUST summarize the details (To, Subject, Time, etc.) and ask "Shall I proceed, Boss?" or something similar. Wait for a confirmation before calling the tool.
+- **ERROR HANDLING:** If a tool fails (e.g., "Missing token"), don't just say "Error". Instead, say something like "I'm having a bit of trouble accessing your Google account right now, Boss. Could you please double-check if you're logged in? I want to make sure I get this right for you."
+- **KNOWLEDGE:** You are highly knowledgeable of all function tools. Use them autonomously to search, audit, and manage Jo's workspace.
+- **VISION:** You can see Jo. Comment on his environment or expressions if it adds value to the conversation.
+- **TRANSCRIPTION:** Every time you speak, a text version of your speech is shown to Jo. Ensure your spoken words match the intended message perfectly.
+
+CONTEXT:
+- Date: ${dateString}. Time: ${timeString}. Timezone: ${timeZone}.
+- Active Mode: [**${contextString}**].
+
+LANGUAGE:
+- Default to English. Automatically adapt to whatever language Jo speaks (Dutch, French, etc.). 
+- Call 'report_language' whenever the language shifts.
+
+When Jo asks to search for something, use 'drive_search', 'gmail_search', or 'youtube_search' accordingly. Always summarize the top results for him verbally.`;
+
 
       sessionPromiseRef.current = ai.live.connect({
         model: "gemini-3.1-flash-live-preview",
@@ -349,7 +362,7 @@ When you speak, also call the report_language function to report the detected in
               },
               {
                 name: 'add_calendar_event',
-                description: 'Add a new event or meeting to the Agenda/Calendar based on user dictation.',
+                description: 'Add a new event or meeting to the Agenda/Calendar. Always confirm details with the user before final execution.',
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
@@ -363,7 +376,7 @@ When you speak, also call the report_language function to report the detected in
               },
               {
                 name: 'gmail_search',
-                description: 'Search for emails in the user inbox using a query string.',
+                description: 'Search for emails in the user inbox. Returns subjects and previews.',
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
@@ -374,7 +387,7 @@ When you speak, also call the report_language function to report the detected in
               },
               {
                 name: 'gmail_send',
-                description: 'Send an email on behalf of the user.',
+                description: 'Send an email on behalf of the user. ALWAYS summarize to/subject/body and ask for confirmation before calling this tool.',
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
@@ -387,7 +400,7 @@ When you speak, also call the report_language function to report the detected in
               },
               {
                 name: 'drive_search',
-                description: 'Search for files in Google Drive.',
+                description: 'Search for files in Google Drive by name or content. Returns file names and snippets.',
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
@@ -398,7 +411,7 @@ When you speak, also call the report_language function to report the detected in
               },
               {
                 name: 'youtube_search',
-                description: 'Search for videos on YouTube.',
+                description: 'Search for videos on YouTube. Returns titles and channel names.',
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
