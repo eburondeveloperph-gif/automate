@@ -14,6 +14,7 @@ function AppInner() {
   const [currentTab, setCurrentTab] = useState<TabKey>('talk');
   const { user } = useAuth();
   const [voiceRequestedTab, setVoiceRequestedTab] = useState<TabKey | null>(null);
+  const [voiceRequestedDocPreview, setVoiceRequestedDocPreview] = useState<string | null>(null);
   
   // Voice state for global UI overlay
   const [isVoiceConnected, setIsVoiceConnected] = useState(false);
@@ -28,7 +29,7 @@ function AppInner() {
 
   const renderScreen = () => {
     switch (currentTab) {
-      case 'docs': return <DocsScreen />;
+      case 'docs': return <DocsScreen voiceRequestedDocPreview={voiceRequestedDocPreview} />;
       case 'agenda': return <AgendaScreen />;
       case 'memory': return <MemoryScreen />;
       case 'contracts': return <ContractsScreen />;
@@ -42,6 +43,7 @@ function AppInner() {
         <div className={currentTab === 'talk' ? 'h-full w-full block' : 'hidden'}>
           <TalkScreen 
             setVoiceRequestedTab={setVoiceRequestedTab} 
+            setVoiceRequestedDocPreview={setVoiceRequestedDocPreview}
             onConnectionChange={setIsVoiceConnected}
             onSpeakingChange={setIsVoiceSpeaking}
           />

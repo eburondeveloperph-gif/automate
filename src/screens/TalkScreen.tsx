@@ -6,17 +6,19 @@ import { TabKey } from '../App';
 
 export default function TalkScreen({ 
   setVoiceRequestedTab,
+  setVoiceRequestedDocPreview,
   onConnectionChange,
   onSpeakingChange
 }: { 
   setVoiceRequestedTab: (tab: TabKey) => void;
+  setVoiceRequestedDocPreview?: (docName: string) => void;
   onConnectionChange?: (connected: boolean) => void;
   onSpeakingChange?: (speaking: boolean) => void;
 }) {
   const [activeContext, setActiveContext] = useState<TalkContext>(() => {
     return (localStorage.getItem('beatrice_active_context') as TalkContext) || 'Work';
   });
-  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab } = useLiveAPI(activeContext);
+  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab, requestedDocPreview } = useLiveAPI(activeContext);
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [showMicPrompt, setShowMicPrompt] = useState(false);
 
@@ -25,6 +27,14 @@ export default function TalkScreen({
       setVoiceRequestedTab(requestedTab as TabKey);
     }
   }, [requestedTab, setVoiceRequestedTab]);
+
+  useEffect(() => {
+    if (requestedDocPreview && setVoiceRequestedDocPreview) {
+      // Also automatically transition to the Docs tab if not already there
+      setVoiceRequestedTab('docs');
+      setVoiceRequestedDocPreview(requestedDocPreview);
+    }
+  }, [requestedDocPreview, setVoiceRequestedDocPreview, setVoiceRequestedTab]);
 
   useEffect(() => {
     if (onConnectionChange) onConnectionChange(connected);

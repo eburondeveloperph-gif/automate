@@ -7,7 +7,7 @@ const MOCK_CONTENT: Record<number, string> = {
   2: "PARTNERSHIP AGREEMENT (DRAFT)\n\nThis Partnership Agreement is entered into by and between Horizon Tech and Eburon AI.\n\n1. TERM: The initial term shall be twenty-four (24) months.\n2. GOVERNANCE: A joint steering committee will be established, meeting quarterly.\n3. CONFIDENTIALITY: Both parties agree to mutual non-disclosure of proprietary algorithms.",
 };
 
-export default function DocsScreen() {
+export default function DocsScreen({ voiceRequestedDocPreview }: { voiceRequestedDocPreview?: string | null }) {
   const [docs] = useState([
     { id: 1, name: 'Q3_Financial_Projections.pdf', status: 'indexed', type: 'PDF' },
     { id: 2, name: 'Partnership_Agreement_Draft.docx', status: 'indexed', type: 'DOCX' },
@@ -23,6 +23,16 @@ export default function DocsScreen() {
 
   const [previewDocId, setPreviewDocId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Handle voice-driven document preview requests
+  React.useEffect(() => {
+    if (voiceRequestedDocPreview) {
+      const match = docs.find(d => d.name.toLowerCase().includes(voiceRequestedDocPreview.toLowerCase()));
+      if (match) {
+        setPreviewDocId(match.id);
+      }
+    }
+  }, [voiceRequestedDocPreview, docs]);
 
   const getPreviewText = (id: number, name: string) => {
     return MOCK_CONTENT[id] || `[System Extract]\n\nDocument: ${name}\nStatus: Actively monitored by Beatrice.\n\nExtracting primary context variables... The full unstructured matrix is stored in the cold layer. Please ask Beatrice specific questions about this document's contents.`;

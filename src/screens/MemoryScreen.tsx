@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Brain, Trash2, Plus, Sparkles, Database, FileText } from 'lucide-react';
+import { Brain, Trash2, Plus, Sparkles, Database, FileText, Search, X, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useMemories, MemoryType } from '../hooks/useMemories';
 
 export default function MemoryScreen() {
   const { memories, loading, addMemory, removeMemory } = useMemories();
   const [filter, setFilter] = useState<'all' | MemoryType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState<'all' | '7d' | '30d'>('all');
+  
   const [newContent, setNewContent] = useState('');
   const [newType, setNewType] = useState<MemoryType>('fact');
   const [isAdding, setIsAdding] = useState(false);
@@ -39,7 +42,25 @@ export default function MemoryScreen() {
     }
   };
 
-  const filteredMemories = memories.filter(m => filter === 'all' || m.type === filter);
+  const filteredMemories = memories.filter(m => {
+    // Type filter
+    if (filter !== 'all' && m.type !== filter) return false;
+    
+    // Search query filter
+    if (searchQuery && !m.content.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    
+    // Date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - m.createdAt.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (dateFilter === '7d' && diffDays > 7) return false;
+      if (dateFilter === '30d' && diffDays > 30) return false;
+    }
+    
+    return true;
+  });
 
   return (
     <div className="flex flex-col h-full px-4 pt-4 pb-20 gap-6 overflow-y-auto hide-scrollbar relative">
@@ -50,16 +71,66 @@ export default function MemoryScreen() {
         </span>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 shrink-0">
-        {filters.map((f) => (
-          <button 
-            key={f.id} 
-            onClick={() => setFilter(f.id)}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider border transition-colors ${filter === f.id ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-white/10 text-white/50 glass-panel hover:bg-white/5'}`}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="flex flex-col gap-3 shrink-0">
+        {/* Advanced Search Bar */}
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={14} className="text-white/40" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search memory contents..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-9 pr-8 text-sm font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Filters Group */}
+        <div className="flex flex-col gap-2">
+          {/* Main Type Filters */}
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+            {filters.map((f) => (
+              <button 
+                key={f.id} 
+                onClick={() => setFilter(f.id)}
+                className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider border transition-colors ${filter === f.id ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-white/10 text-white/50 glass-panel hover:bg-white/5'}`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Date Range Filters */}
+          <div className="flex gap-2 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none opacity-50">
+               <Calendar size={10} className="text-white" />
+            </div>
+            <div className="flex gap-2 pl-8 overflow-x-auto hide-scrollbar pb-1">
+              {[
+                { id: 'all', label: 'Any Time' },
+                { id: '7d', label: 'Last 7 Days' },
+                { id: '30d', label: 'Last 30 Days' }
+              ].map((df) => (
+                <button
+                  key={df.id}
+                  onClick={() => setDateFilter(df.id as 'all' | '7d' | '30d')}
+                  className={`shrink-0 px-3 py-1 rounded-md text-[9px] uppercase tracking-wider transition-colors ${dateFilter === df.id ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white/60 bg-white/5'}`}
+                >
+                  {df.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Add Memory Form */}

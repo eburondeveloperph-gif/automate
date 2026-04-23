@@ -49,6 +49,7 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
   const [speaking, setSpeaking] = useState(false);
   const [detectedLanguage, setDetectedLanguage] = useState<{input: string, output: string, confidence: string} | null>(null);
   const [requestedTab, setRequestedTab] = useState<string | null>(null);
+  const [requestedDocPreview, setRequestedDocPreview] = useState<string | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const nextTimeRef = useRef<number>(0);
@@ -212,6 +213,20 @@ When you speak, also call the report_language function to report the detected in
                   },
                   required: ['tab']
                 }
+              },
+              {
+                name: 'preview_document',
+                description: 'Open a document preview on the Docs screen when the user explicitly asks to show or open a preview for a specific document.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    documentName: { 
+                      type: Type.STRING, 
+                      description: 'The name or partial name of the document to preview (e.g. "Q3 Financial Projections")' 
+                    }
+                  },
+                  required: ['documentName']
+                }
               }
             ]
           }]
@@ -278,6 +293,18 @@ When you speak, also call the report_language function to report the detected in
                         functionResponses: [{ id: call.id, name: call.name, response: { success: true, newTab: args.tab } }]
                       });
                     });
+                  } else if (call.name === 'preview_document') {
+                     const args = call.args as any;
+                     if (args.documentName) {
+                       setRequestedDocPreview(args.documentName);
+                       setTimeout(() => setRequestedDocPreview(null), 1000); 
+                     }
+                     // Reply
+                     sessionPromiseRef.current?.then((session: any) => {
+                      session.sendToolResponse({
+                        functionResponses: [{ id: call.id, name: call.name, response: { success: true, previewed: true } }]
+                      });
+                    });
                   }
                 }
               }
@@ -333,5 +360,5 @@ When you speak, also call the report_language function to report the detected in
     }
   };
 
-  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab };
+  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview };
 }
