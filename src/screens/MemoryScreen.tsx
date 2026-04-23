@@ -15,6 +15,21 @@ export default function MemoryScreen() {
   
   // State for delete confirmation
   const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
+  
+  // Suggestions state
+  const [suggestions, setSuggestions] = useState<Array<{id: string, content: string, type: MemoryType, source: string}>>([
+    { id: 's1', content: "Maneer Jo prefers governing law to be Belgium for European partnerships.", type: 'preference', source: 'Recent Contract Draft' },
+    { id: 's2', content: "NDA term length standard is 3 years for new tech alliances.", type: 'fact', source: 'Document Analysis' }
+  ]);
+
+  const handleAddFromSuggestion = async (id: string, content: string, type: MemoryType) => {
+    try {
+      await addMemory(content, type);
+      setSuggestions(prev => prev.filter(s => s.id !== id));
+    } catch (error) {
+      console.error("Failed to add suggested memory:", error);
+    }
+  };
 
   const filters: { id: 'all' | MemoryType, label: string }[] = [
     { id: 'all', label: 'All Context' },
@@ -190,6 +205,47 @@ export default function MemoryScreen() {
           </button>
         </div>
       </form>
+
+      {/* Suggestions Section */}
+      <AnimatePresence>
+        {suggestions.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="flex flex-col gap-3 shrink-0"
+          >
+            <div className="flex items-center gap-2 px-1">
+               <Sparkles size={14} className="text-[#D4AF37]" />
+               <h3 className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold">Intelligence Insights</h3>
+            </div>
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar py-1">
+              {suggestions.map((suggestion) => (
+                <div key={suggestion.id} className="min-w-[260px] glass-panel-heavy rounded-2xl p-4 border border-[#D4AF37]/30 flex flex-col gap-3 relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
+                     <Brain size={40} className="text-[#D4AF37]" />
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <span className="text-[8px] uppercase tracking-wider text-white/40 bg-white/5 px-2 py-0.5 rounded-full">Source: {suggestion.source}</span>
+                     <button onClick={() => setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))} className="text-white/20 hover:text-white transition-colors">
+                       <X size={12} />
+                     </button>
+                   </div>
+                   <p className="text-xs font-serif text-white/80 leading-relaxed italic border-l-2 border-[#D4AF37]/40 pl-3">
+                     "{suggestion.content}"
+                   </p>
+                   <button 
+                    onClick={() => handleAddFromSuggestion(suggestion.id, suggestion.content, suggestion.type)}
+                    className="w-full py-2 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-xl text-[9px] uppercase tracking-widest text-[#D4AF37] font-bold hover:bg-[#D4AF37] hover:text-black transition-all"
+                   >
+                     Commit to Memory
+                   </button>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Memory List */}
       <div className="flex flex-col gap-4">

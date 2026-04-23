@@ -53,8 +53,10 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
   const [requestedDocSearch, setRequestedDocSearch] = useState<string | null>(null);
   const [requestedContractParams, setRequestedContractParams] = useState<{partyNames?: string, governingLaw?: string, termLength?: string} | null>(null);
   const [requestedCalendarEvent, setRequestedCalendarEvent] = useState<{title?: string, startTimeIso?: string, endTimeIso?: string, attendees?: string} | null>(null);
+  const [micStrength, setMicStrength] = useState(0);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const nextTimeRef = useRef<number>(0);
   const sessionPromiseRef = useRef<any>(null);
   const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
@@ -66,11 +68,39 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
       const workletUrl = URL.createObjectURL(workletBlob);
       await audioCtxRef.current.audioWorklet.addModule(workletUrl);
       URL.revokeObjectURL(workletUrl);
+
+      // Setup analyser
+      analyserRef.current = audioCtxRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
     }
     if (audioCtxRef.current.state === 'suspended') {
       await audioCtxRef.current.resume();
     }
   };
+
+  // Monitor mic strength
+  useEffect(() => {
+    let intervalId: any;
+    if (connected && analyserRef.current) {
+      const bufferLength = analyserRef.current.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      intervalId = setInterval(() => {
+        if (analyserRef.current) {
+          analyserRef.current.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / bufferLength;
+          setMicStrength(average / 128); // Normalize roughly to 0-1
+        }
+      }, 100);
+    } else {
+      setMicStrength(0);
+    }
+    return () => clearInterval(intervalId);
+  }, [connected]);
 
   const playAudioChunk = (base64Data: string) => {
     if (!audioCtxRef.current) return;
@@ -310,6 +340,7 @@ When you speak, also call the report_language function to report the detected in
                  }).catch(console.error);
                }
              };
+             source.connect(analyserRef.current!);
              source.connect(workletNode);
              workletNode.connect(audioCtxRef.current!.destination);
              
@@ -465,5 +496,5 @@ When you speak, also call the report_language function to report the detected in
     }
   };
 
-  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent };
+  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent, micStrength };
 }

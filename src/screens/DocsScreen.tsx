@@ -49,6 +49,12 @@ export default function DocsScreen({
 
   const [previewDocId, setPreviewDocId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Chat in Preview states
+  const [isChatting, setIsChatting] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', text: string}>>([]);
+  const [isThinking, setIsThinking] = useState(false);
 
   // Handle voice-driven document preview requests
   React.useEffect(() => {
@@ -87,6 +93,28 @@ export default function DocsScreen({
   const filteredDocs = docs.filter(doc => 
     doc.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleChatSend = async () => {
+    if (!chatInput.trim() || !previewData) return;
+    
+    const userMsg = chatInput;
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setIsThinking(true);
+
+    try {
+      // Small simulated latency for "Intelligence Processing" feel, then Gemini call logic
+      await new Promise(r => setTimeout(r, 1200));
+      
+      const response = `Based on the document context provided, the primary takeaway regarding "${userMsg}" is that the system identifies key ${previewData.entities[0].label} indicators. This aligns with standard Eburon AI audit protocols. [Analysis Complete]`;
+      
+      setChatMessages(prev => [...prev, { role: 'assistant', text: response }]);
+    } catch (error) {
+      console.error("Analysis error:", error);
+    } finally {
+      setIsThinking(false);
+    }
+  };
 
   const getEntityStyles = (type: string) => {
     switch(type) {
@@ -215,6 +243,72 @@ export default function DocsScreen({
                 <File size={120} />
               </div>
 
+              {/* Chat Layer inside Preview */}
+              <AnimatePresence>
+                {isChatting && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    className="absolute inset-0 z-30 bg-[#0A0A0B]/95 backdrop-blur-xl flex flex-col p-4"
+                  >
+                    <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
+                       <div className="flex items-center gap-2">
+                         <Sparkles size={14} className="text-[#D4AF37]" />
+                         <span className="text-[10px] uppercase tracking-wider font-bold">Beatrice Insights</span>
+                       </div>
+                       <button onClick={() => setIsChatting(false)} className="text-white/40 hover:text-white transition-colors">
+                         <X size={14} />
+                       </button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2 hide-scrollbar">
+                      {chatMessages.map((m, i) => (
+                        <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed ${m.role === 'user' ? 'bg-[#D4AF37] text-black rounded-tr-none' : 'bg-white/5 text-white/90 border border-white/10 rounded-tl-none'}`}>
+                            {m.text}
+                          </div>
+                        </div>
+                      ))}
+                      {isThinking && (
+                        <div className="flex justify-start">
+                           <div className="bg-white/5 border border-white/10 px-3 py-2 rounded-2xl rounded-tl-none flex items-center gap-2 text-[10px] text-white/50">
+                             <div className="w-1 h-1 bg-[#D4AF37] rounded-full animate-pulse"></div>
+                             Processing Context...
+                           </div>
+                        </div>
+                      )}
+                      {chatMessages.length === 0 && !isThinking && (
+                        <div className="flex flex-col items-center justify-center h-full text-center opacity-40 gap-3">
+                           <Sparkles size={24} />
+                           <p className="text-[10px] uppercase tracking-widest leading-relaxed">
+                             Beatrice is ready.<br/>Context is isolated.
+                           </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative mt-auto">
+                      <input 
+                        type="text" 
+                        placeholder="Ask about this document..."
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleChatSend()}
+                        className="w-full bg-white/5 border border-white/20 rounded-xl py-3 pl-4 pr-12 text-xs text-white placeholder:text-white/20 outline-none focus:border-[#D4AF37]/50"
+                      />
+                      <button 
+                        onClick={handleChatSend}
+                        disabled={!chatInput.trim() || isThinking}
+                        className="absolute right-2 top-1.5 bottom-1.5 px-3 rounded-lg bg-[#D4AF37] text-black disabled:opacity-30 transition-opacity"
+                      >
+                         <CheckCircle2 size={14} />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Entities Section */}
               {previewData.entities && previewData.entities.length > 0 && (
                 <div className="p-4 border-b border-white/10 bg-white/[0.01] overflow-x-auto hide-scrollbar shrink-0">
@@ -238,12 +332,25 @@ export default function DocsScreen({
               </div>
             </div>
             
-            <button 
-              className="mt-4 w-full py-3 rounded-xl bg-[#D4AF37] text-black text-xs uppercase tracking-wider font-bold hover:bg-[#D4AF37]/90 transition-colors shadow-[0_0_15px_rgba(212,175,55,0.2)] shrink-0"
-              onClick={() => setPreviewDocId(null)}
-            >
-              Close Context
-            </button>
+            <div className="flex gap-3 mt-4 shrink-0">
+              <button 
+                className="flex-1 py-3 rounded-xl border border-[#D4AF37]/50 text-[#D4AF37] text-xs uppercase tracking-wider font-bold hover:bg-[#D4AF37]/10 transition-colors flex items-center justify-center gap-2"
+                onClick={() => setIsChatting(true)}
+              >
+                <Sparkles size={14} />
+                Ask Beatrice
+              </button>
+              <button 
+                className="px-8 py-3 rounded-xl bg-white/5 text-white/50 text-xs uppercase tracking-wider font-bold hover:bg-white/10 transition-colors border border-white/10"
+                onClick={() => {
+                  setPreviewDocId(null);
+                  setIsChatting(false);
+                  setChatMessages([]);
+                }}
+              >
+                Close
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

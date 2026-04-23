@@ -24,7 +24,7 @@ export default function TalkScreen({
   const [activeContext, setActiveContext] = useState<TalkContext>(() => {
     return (localStorage.getItem('beatrice_active_context') as TalkContext) || 'Work';
   });
-  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent } = useLiveAPI(activeContext);
+  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent, micStrength } = useLiveAPI(activeContext);
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [showMicPrompt, setShowMicPrompt] = useState(false);
 
@@ -88,9 +88,11 @@ export default function TalkScreen({
     }
   };
 
-  const handleGrantMic = () => {
+  const handleGrantMic = (persist = false) => {
     setShowMicPrompt(false);
-    localStorage.setItem('beatrice_mic_granted', 'true');
+    if (persist) {
+      localStorage.setItem('beatrice_mic_granted', 'true');
+    }
     connect();
   };
 
@@ -137,13 +139,18 @@ export default function TalkScreen({
               <p className="text-sm font-light leading-relaxed text-white/70">
                 Beatrice requires access to your microphone to capture your voice commands, transcribe your speech, and converse with you in real-time.
               </p>
-              <div className="flex gap-3 mt-4">
-                <button onClick={() => setShowMicPrompt(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-xs uppercase tracking-wider font-medium hover:bg-white/5 transition-colors">
-                  Cancel
+              <div className="flex flex-col gap-2 mt-4">
+                <button onClick={() => handleGrantMic(true)} className="w-full py-3 rounded-xl bg-[#D4AF37] text-black text-xs uppercase tracking-wider font-bold hover:bg-[#D4AF37]/90 transition-colors shadow-lg shadow-[#D4AF37]/20">
+                  Always Allow
                 </button>
-                <button onClick={handleGrantMic} className="flex-1 py-3 rounded-xl bg-[#D4AF37] text-black text-xs uppercase tracking-wider font-bold hover:bg-[#D4AF37]/90 transition-colors">
-                  Allow
-                </button>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowMicPrompt(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-xs uppercase tracking-wider font-medium hover:bg-white/5 transition-colors">
+                    Cancel
+                  </button>
+                  <button onClick={() => handleGrantMic(false)} className="flex-1 py-3 rounded-xl bg-white/10 text-white text-xs uppercase tracking-wider font-bold hover:bg-white/20 transition-colors">
+                    Just Once
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -219,6 +226,15 @@ export default function TalkScreen({
             onClick={handleOrbClick} 
             className={`w-48 h-48 rounded-full border border-white/10 flex items-center justify-center shadow-inner relative focus:outline-none transition-colors duration-500 ${connected ? 'bg-gradient-to-tr from-[#D4AF37]/20 via-black to-[#1a1a1a]' : 'bg-gradient-to-tr from-black via-black to-[#1a1a1a]'}`}
           >
+            {/* Mic Strength Ring */}
+            {connected && (
+              <motion.div 
+                className="absolute inset-0 rounded-full border-2 border-[#D4AF37] opacity-20"
+                animate={{ scale: 1 + (micStrength * 0.2), opacity: 0.1 + (micStrength * 0.4) }}
+                transition={{ type: 'spring', damping: 10, stiffness: 100 }}
+              />
+            )}
+            
             <div className={`w-40 h-40 rounded-full bg-gradient-to-br from-[#D4AF37]/40 via-black to-transparent p-[1px] flex items-center justify-center ${connected ? 'shadow-[0_0_80px_rgba(212,175,55,0.3)]' : 'shadow-[0_0_30px_rgba(212,175,55,0.1)]'} transition-shadow duration-500`}>
               <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden relative">
                  <div className="w-32 h-32 flex items-center justify-center" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)' }}>
