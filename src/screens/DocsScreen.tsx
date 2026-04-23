@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, File, Trash2, CheckCircle2, Search, X } from 'lucide-react';
+import { UploadCloud, File, Trash2, CheckCircle2, Search, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const MOCK_CONTENT: Record<number, { text: string; entities: Array<{ label: string; type: 'person' | 'org' | 'date' | 'amount' | 'concept' }> }> = {

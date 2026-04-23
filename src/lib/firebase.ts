@@ -11,6 +11,7 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || localConfig.messagingSenderId,
   appId: import.meta.env.VITE_FIREBASE_APP_ID || localConfig.appId,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || localConfig.measurementId,
+  databaseURL: (localConfig as any).databaseURL,
 };
 
 console.log('Firebase Init Details:', {
@@ -27,17 +28,14 @@ export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Scopes for Google Services Integration
-// NOTE: Requesting highly sensitive scopes like full Gmail or Drive access will
-// IMMEDIATELY cause an 'auth/internal-error' if they have not been explicitly 
-// added to your Google Cloud Console OAuth Consent screen. 
-// We have temporarily disabled them to allow you to log in. 
-// googleProvider.addScope('https://mail.google.com/'); 
-// googleProvider.addScope('https://www.googleapis.com/auth/drive'); 
-// googleProvider.addScope('https://www.googleapis.com/auth/documents'); 
-// googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets'); 
-// googleProvider.addScope('https://www.googleapis.com/auth/presentations'); 
-// googleProvider.addScope('https://www.googleapis.com/auth/calendar'); 
-// googleProvider.addScope('https://www.googleapis.com/auth/contacts');
+googleProvider.addScope('https://www.googleapis.com/auth/gmail.modify'); 
+googleProvider.addScope('https://www.googleapis.com/auth/drive'); 
+googleProvider.addScope('https://www.googleapis.com/auth/documents'); 
+googleProvider.addScope('https://www.googleapis.com/auth/spreadsheets'); 
+googleProvider.addScope('https://www.googleapis.com/auth/presentations'); 
+googleProvider.addScope('https://www.googleapis.com/auth/calendar'); 
+googleProvider.addScope('https://www.googleapis.com/auth/contacts');
+googleProvider.addScope('https://www.googleapis.com/auth/youtube.force-ssl');
 
 export interface FirestoreErrorInfo {
   error: string;

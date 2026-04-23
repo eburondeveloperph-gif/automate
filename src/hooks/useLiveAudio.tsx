@@ -321,6 +321,52 @@ When you speak, also call the report_language function to report the detected in
                   },
                   required: ['title', 'startTimeIso', 'endTimeIso']
                 }
+              },
+              {
+                name: 'gmail_search',
+                description: 'Search for emails in the user inbox using a query string.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    query: { type: Type.STRING, description: 'The search query (e.g. from:someone, subject:something)' }
+                  },
+                  required: ['query']
+                }
+              },
+              {
+                name: 'gmail_send',
+                description: 'Send an email on behalf of the user.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    to: { type: Type.STRING, description: 'Recipient email address' },
+                    subject: { type: Type.STRING, description: 'Email subject' },
+                    body: { type: Type.STRING, description: 'Email body content' }
+                  },
+                  required: ['to', 'subject', 'body']
+                }
+              },
+              {
+                name: 'drive_search',
+                description: 'Search for files in Google Drive.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    query: { type: Type.STRING, description: 'Search query for file names or content' }
+                  },
+                  required: ['query']
+                }
+              },
+              {
+                name: 'youtube_search',
+                description: 'Search for videos on YouTube.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    query: { type: Type.STRING, description: 'The search term for videos' }
+                  },
+                  required: ['query']
+                }
               }
             ]
           }]
@@ -441,6 +487,123 @@ When you speak, also call the report_language function to report the detected in
                         functionResponses: [{ id: call.id, name: call.name, response: { success: true, added: true } }]
                       });
                     });
+                  } else if (call.name === 'gmail_search') {
+                    const args = call.args as any;
+                    const token = localStorage.getItem('beatrice_google_access_token');
+                    if (!token) {
+                      sessionPromiseRef.current?.then((session: any) => {
+                        session.sendToolResponse({
+                          functionResponses: [{ id: call.id, name: call.name, response: { error: "No Google access token found. Please log in with Google." } }]
+                        });
+                      });
+                    } else {
+                      fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(args.query)}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      }).then(r => r.json()).then(data => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { messages: data.messages || [], totalResults: data.resultSizeEstimate } }]
+                          });
+                        });
+                      }).catch(err => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { error: err.message } }]
+                          });
+                        });
+                      });
+                    }
+                  } else if (call.name === 'gmail_send') {
+                    const args = call.args as any;
+                    const token = localStorage.getItem('beatrice_google_access_token');
+                    if (!token) {
+                      sessionPromiseRef.current?.then((session: any) => {
+                        session.sendToolResponse({
+                          functionResponses: [{ id: call.id, name: call.name, response: { error: "No Google access token found." } }]
+                        });
+                      });
+                    } else {
+                      const email = [
+                        `To: ${args.to}`,
+                        `Subject: ${args.subject}`,
+                        '',
+                        args.body
+                      ].join('\n');
+                      const base64SafeEmail = btoa(email).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                      
+                      fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+                        method: 'POST',
+                        headers: { 
+                          Authorization: `Bearer ${token}`,
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ raw: base64SafeEmail })
+                      }).then(r => r.json()).then(data => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { success: true, messageId: data.id } }]
+                          });
+                        });
+                      }).catch(err => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { error: err.message } }]
+                          });
+                        });
+                      });
+                    }
+                  } else if (call.name === 'drive_search') {
+                    const args = call.args as any;
+                    const token = localStorage.getItem('beatrice_google_access_token');
+                    if (!token) {
+                      sessionPromiseRef.current?.then((session: any) => {
+                        session.sendToolResponse({
+                          functionResponses: [{ id: call.id, name: call.name, response: { error: "Missing token" } }]
+                        });
+                      });
+                    } else {
+                      fetch(`https://www.googleapis.com/drive/v3/files?q=name contains '${args.query}'`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      }).then(r => r.json()).then(data => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { files: data.files || [] } }]
+                          });
+                        });
+                      }).catch(err => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { error: err.message } }]
+                          });
+                        });
+                      });
+                    }
+                  } else if (call.name === 'youtube_search') {
+                    const args = call.args as any;
+                    const token = localStorage.getItem('beatrice_google_access_token');
+                    if (!token) {
+                      sessionPromiseRef.current?.then((session: any) => {
+                        session.sendToolResponse({
+                          functionResponses: [{ id: call.id, name: call.name, response: { error: "Missing token" } }]
+                        });
+                      });
+                    } else {
+                      fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(args.query)}&maxResults=5&type=video`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      }).then(r => r.json()).then(data => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { results: data.items || [] } }]
+                          });
+                        });
+                      }).catch(err => {
+                        sessionPromiseRef.current?.then((session: any) => {
+                          session.sendToolResponse({
+                            functionResponses: [{ id: call.id, name: call.name, response: { error: err.message } }]
+                          });
+                        });
+                      });
+                    }
                   }
                 }
               }
