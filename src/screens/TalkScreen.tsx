@@ -24,7 +24,7 @@ export default function TalkScreen({
   const [activeContext, setActiveContext] = useState<TalkContext>(() => {
     return (localStorage.getItem('beatrice_active_context') as TalkContext) || 'Work';
   });
-  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent, micStrength } = useLiveAPI(activeContext);
+  const { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent, micStrength } = useLiveAPI(activeContext);
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [showMicPrompt, setShowMicPrompt] = useState(false);
 
@@ -62,6 +62,13 @@ export default function TalkScreen({
       setVoiceRequestedCalendarEvent(requestedCalendarEvent);
     }
   }, [requestedCalendarEvent, setVoiceRequestedCalendarEvent, setVoiceRequestedTab]);
+
+  useEffect(() => {
+    const el = document.getElementById('transcript-end');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [transcript]);
 
   useEffect(() => {
     if (onConnectionChange) onConnectionChange(connected);
@@ -271,6 +278,39 @@ export default function TalkScreen({
                 <motion.div animate={{ height: orbState === 'speaking' ? [4, 12, 4] : [4, 6, 4] }} transition={{ repeat: Infinity, duration: 0.8, delay: 0.4 }} className="w-1 h-4 rounded-full bg-[#D4AF37]"></motion.div>
               </div>
             )}
+          </div>
+
+          {/* Scrolling Transcript Area */}
+          <div className="w-full flex-1 mt-4 px-6 overflow-y-auto hide-scrollbar max-h-[120px]">
+            <div className="flex flex-col gap-3">
+              <AnimatePresence mode="popLayout">
+                {transcript.map((item, idx) => (
+                  <motion.div
+                    key={`${item.time}-${idx}`}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className={`flex flex-col ${item.role === 'jo' ? 'items-end' : 'items-start'}`}
+                  >
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-xs leading-relaxed font-light ${
+                      item.role === 'jo' 
+                      ? 'bg-white/10 text-white/90 rounded-tr-none border border-white/5' 
+                      : 'bg-[#D4AF37]/10 text-[#D4AF37] rounded-tl-none border border-[#D4AF37]/20'
+                    }`}>
+                      {item.text}
+                    </div>
+                    <span className="text-[8px] uppercase tracking-widest text-white/20 mt-1 px-1">
+                      {item.role === 'jo' ? 'Boss' : 'Beatrice'} • {item.time.split(' ')[0]}
+                    </span>
+                  </motion.div>
+                ))}
+                {transcript.length === 0 && connected && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.3 }} className="text-center text-[10px] uppercase tracking-widest mt-4">
+                    Waiting for input...
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              <div id="transcript-end" />
+            </div>
           </div>
         </div>
 

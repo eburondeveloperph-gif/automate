@@ -404,6 +404,9 @@ When you speak, also call the report_language function to report the detected in
                 if (part.inlineData?.data) {
                   playAudioChunk(part.inlineData.data);
                 }
+                if (part.text) {
+                  setTranscript(prev => [...prev, { role: 'beatrice', text: part.text!, time: new Date().toLocaleTimeString() }]);
+                }
                 if (part.functionCall) {
                   const call = part.functionCall;
                   if (call.name === 'report_language') {
@@ -611,8 +614,20 @@ When you speak, also call the report_language function to report the detected in
 
             // Handle transcription
             if ((message as any).serverContent?.modelTurn?.parts) {
-               // We only have the modelTurn audio, transcription might arrive in different events.
-               // We will wait for the documentation matching structure or parse text parts.
+               // Transcription is usually separate, let's look for transcription field
+            }
+
+            if ((message as any).serverContent?.modelTurn?.parts) {
+               // Already handled above with text parts
+            }
+
+            // Check for transcription message
+            const transcriptionMsg = (message as any).serverContent?.modelTurn?.parts?.[0]?.text; // Fallback if it comes as text
+            
+            // Real transcription handling:
+            if ((message as any).transcription?.text) {
+              const text = (message as any).transcription.text;
+              setTranscript(prev => [...prev, { role: 'jo', text, time: new Date().toLocaleTimeString() }]);
             }
           },
           onerror: (err: any) => {
