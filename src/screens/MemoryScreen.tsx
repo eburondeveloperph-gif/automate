@@ -1,54 +1,146 @@
-import React from 'react';
-import { Mail, MessageCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Brain, Trash2, Plus, Sparkles, Database, FileText } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useMemories, MemoryType } from '../hooks/useMemories';
 
 export default function MemoryScreen() {
+  const { memories, loading, addMemory, removeMemory } = useMemories();
+  const [filter, setFilter] = useState<'all' | MemoryType>('all');
+  const [newContent, setNewContent] = useState('');
+  const [newType, setNewType] = useState<MemoryType>('fact');
+  const [isAdding, setIsAdding] = useState(false);
+
+  const filters: { id: 'all' | MemoryType, label: string }[] = [
+    { id: 'all', label: 'All Context' },
+    { id: 'fact', label: 'Facts' },
+    { id: 'preference', label: 'Preferences' },
+    { id: 'summary', label: 'Summaries' },
+  ];
+
+  const getTypeIcon = (type: MemoryType) => {
+    switch (type) {
+      case 'preference': return <Sparkles size={12} className="text-[#D4AF37]" />;
+      case 'fact': return <Database size={12} className="text-blue-400" />;
+      case 'summary': return <FileText size={12} className="text-emerald-400" />;
+    }
+  };
+
+  const handleAddMemory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newContent.trim()) return;
+    try {
+      setIsAdding(true);
+      await addMemory(newContent.trim(), newType);
+      setNewContent('');
+    } catch (error) {
+      console.error("Failed to add memory:", error);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const filteredMemories = memories.filter(m => filter === 'all' || m.type === filter);
+
   return (
-    <div className="flex flex-col h-full px-4 pt-4 gap-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full px-4 pt-4 pb-20 gap-6 overflow-y-auto hide-scrollbar relative">
+      <div className="flex items-center justify-between shrink-0">
         <h2 className="font-serif text-2xl tracking-tight text-white/90">Memory</h2>
-        <span className="text-[10px] uppercase tracking-wider text-white/40">Last 24h</span>
+        <span className="text-[10px] uppercase tracking-wider text-white/40 flex items-center gap-1">
+          <Brain size={12} /> {memories.length} Stored
+        </span>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-        {['All Context', 'Emails', 'WhatsApp', 'Follow-ups'].map((f, i) => (
-          <button key={i} className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider border ${i === 0 ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-white/10 text-white/50 glass-panel'}`}>
-            {f}
+      <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 shrink-0">
+        {filters.map((f) => (
+          <button 
+            key={f.id} 
+            onClick={() => setFilter(f.id)}
+            className={`shrink-0 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider border transition-colors ${filter === f.id ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-white/10 text-white/50 glass-panel hover:bg-white/5'}`}
+          >
+            {f.label}
           </button>
         ))}
       </div>
 
+      {/* Add Memory Form */}
+      <form onSubmit={handleAddMemory} className="glass-panel p-3 rounded-2xl flex flex-col gap-3 shrink-0 border border-white/10">
+        <div className="flex gap-2">
+          {['fact', 'preference', 'summary'].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setNewType(t as MemoryType)}
+              className={`px-3 py-1 rounded-full text-[9px] uppercase tracking-widest border transition-colors ${newType === t ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10' : 'border-transparent text-white/40 hover:text-white/60 bg-white/5'}`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 items-end">
+          <textarea
+            value={newContent}
+            onChange={(e) => setNewContent(e.target.value)}
+            placeholder="Add new context to memory..."
+            className="flex-1 bg-transparent text-sm text-white/90 placeholder-white/30 resize-none outline-none max-h-32 min-h-[40px]"
+            rows={2}
+          />
+          <button 
+            type="submit" 
+            disabled={!newContent.trim() || isAdding}
+            className="shrink-0 w-8 h-8 rounded-full bg-[#D4AF37] text-black flex items-center justify-center disabled:opacity-50 disabled:bg-white/10 disabled:text-white/30 transition-colors"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+      </form>
+
+      {/* Memory List */}
       <div className="flex flex-col gap-4">
-        
-        {/* Email Summary Block */}
-        <div className="glass-panel rounded-2xl p-4 flex flex-col gap-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Mail size={12} className="text-[#D4AF37]" />
-            <h3 className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-medium">Inbox Synthesis</h3>
-          </div>
-          <p className="text-sm font-serif leading-relaxed text-white/80">
-            Received 3 emails from <span className="text-white bg-white/10 px-1 rounded">Pierre (Tech Lead)</span> regarding the Horizon integration. He needs the finalized API keys by Friday.
-          </p>
-          <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/10">
-            <AlertCircle size={12} className="text-rose-400" />
-            <span className="text-[10px] text-white/50 uppercase tracking-wider">Action Required: Generate API Keys</span>
-          </div>
-        </div>
-
-        {/* WhatsApp Summary Block */}
-        <div className="glass-panel rounded-2xl p-4 flex flex-col gap-3">
-          <div className="flex items-center gap-2 mb-1">
-            <MessageCircle size={12} className="text-[#D4AF37]" />
-            <h3 className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-medium">WhatsApp Sync</h3>
-          </div>
-          <p className="text-sm font-serif leading-relaxed text-white/80">
-            <span className="text-white bg-white/10 px-1 rounded">Marc Dubois</span> confirmed the venue for the offsite. The catering budget needs your approval.
-          </p>
-          <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/10">
-            <CheckCircle2 size={12} className="text-white/40" />
-            <span className="text-[10px] text-white/50 uppercase tracking-wider">Followed up at 09:30 AM</span>
-          </div>
-        </div>
-
+        <AnimatePresence mode="popLayout">
+          {loading ? (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-4">
+              Accessing core memory...
+            </motion.p>
+          ) : filteredMemories.length === 0 ? (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-white/40 text-center py-8 border border-dashed border-white/10 rounded-2xl">
+              No matching memories found.
+            </motion.p>
+          ) : (
+            filteredMemories.map((memory) => (
+              <motion.div 
+                key={memory.id}
+                layout
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="glass-panel rounded-2xl p-4 flex flex-col gap-3 group relative border border-white/5 hover:border-white/10 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    {getTypeIcon(memory.type)}
+                    <h3 className="text-[10px] uppercase tracking-widest text-white/50 font-medium">
+                      {memory.type}
+                    </h3>
+                  </div>
+                  <button 
+                    onClick={() => removeMemory(memory.id)}
+                    className="opacity-0 group-hover:opacity-100 text-rose-400 hover:bg-rose-400/10 p-1.5 rounded-full transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+                <p className="text-sm font-serif leading-relaxed text-white/80 whitespace-pre-wrap">
+                  {memory.content}
+                </p>
+                <div className="flex items-center justify-between mt-1 pt-3 border-t border-white/5">
+                  <span className="text-[9px] text-white/30 uppercase tracking-wider">
+                    {memory.createdAt.toLocaleDateString()} {memory.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

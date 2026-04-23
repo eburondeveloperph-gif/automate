@@ -4,13 +4,13 @@ import { Calendar as CalendarIcon, Clock, Users, ArrowRight, MessageCircle } fro
 export default function AgendaScreen() {
   return (
     <div className="flex flex-col h-full px-4 pt-4 gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <h2 className="font-serif text-2xl tracking-tight text-white/90">Agenda</h2>
         <span className="text-[10px] uppercase tracking-wider text-[#D4AF37]">Today, 15 Oct</span>
       </div>
 
       {/* Up Next Card */}
-      <div className="glass-panel-heavy rounded-3xl p-6 relative overflow-hidden border-[#D4AF37]/20">
+      <div className="glass-panel-heavy rounded-3xl p-6 relative overflow-hidden border-[#D4AF37]/20 shrink-0">
         <div className="absolute top-0 right-0 p-4 opacity-10">
           <CalendarIcon size={100} />
         </div>
@@ -45,7 +45,7 @@ export default function AgendaScreen() {
       </div>
 
       {/* Timeline */}
-      <div className="flex flex-col gap-0 mt-2 relative">
+      <div className="flex flex-col gap-0 mt-2 relative shrink-0 overflow-visible">
         <div className="absolute left-[15px] top-4 bottom-4 w-px bg-white/10" />
         
         <div className="flex items-start gap-4 relative py-2">
@@ -64,6 +64,36 @@ export default function AgendaScreen() {
            <div className="flex-1 glass-panel rounded-xl p-4">
              <h4 className="text-sm font-medium mb-1">Legal Review: Horizon Contract</h4>
              <span className="text-xs text-white/40 font-light">Claire Dubois</span>
+           </div>
+        </div>
+        
+        <div className="flex items-start gap-4 relative py-4">
+           <div className="w-8 h-8 rounded-full glass-panel flex items-center justify-center shrink-0 z-10">
+             <span className="text-[9px] text-white/50">15h</span>
+           </div>
+           <div className="flex-1 glass-panel rounded-xl p-4">
+             <h4 className="text-sm font-medium mb-1">Project Apollo Kickoff</h4>
+             <span className="text-xs text-white/40 font-light">Global Engineering Team</span>
+           </div>
+        </div>
+
+        <div className="flex items-start gap-4 relative py-4">
+           <div className="w-8 h-8 rounded-full glass-panel flex items-center justify-center shrink-0 z-10">
+             <span className="text-[9px] text-white/50">17h</span>
+           </div>
+           <div className="flex-1 glass-panel rounded-xl p-4">
+             <h4 className="text-sm font-medium mb-1">Weekly Exec Board Standup</h4>
+             <span className="text-xs text-white/40 font-light">C-Suite</span>
+           </div>
+        </div>
+        
+        <div className="flex items-start gap-4 relative py-4">
+           <div className="w-8 h-8 rounded-full glass-panel flex items-center justify-center shrink-0 z-10">
+             <span className="text-[9px] text-white/50">19h</span>
+           </div>
+           <div className="flex-1 glass-panel rounded-xl p-4">
+             <h4 className="text-sm font-medium mb-1">Dinner w/ Angel Investors</h4>
+             <span className="text-xs text-white/40 font-light">Balthazar, SoHo</span>
            </div>
         </div>
 

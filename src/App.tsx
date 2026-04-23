@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Shell from './components/layout/Shell';
 import TalkScreen from './screens/TalkScreen';
 import DocsScreen from './screens/DocsScreen';
 import AgendaScreen from './screens/AgendaScreen';
 import MemoryScreen from './screens/MemoryScreen';
 import ContractsScreen from './screens/ContractsScreen';
-import AuthScreen from './screens/AuthScreen';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 
 export type TabKey = 'talk' | 'docs' | 'agenda' | 'memory' | 'contracts';
@@ -13,6 +12,19 @@ export type TabKey = 'talk' | 'docs' | 'agenda' | 'memory' | 'contracts';
 function AppInner() {
   const [currentTab, setCurrentTab] = useState<TabKey>('talk');
   const { user } = useAuth();
+
+  // Autonomous Mode Cycling
+  useEffect(() => {
+    const tabs: TabKey[] = ['talk', 'docs', 'agenda', 'memory', 'contracts'];
+    const interval = setInterval(() => {
+      setCurrentTab(prev => {
+        const currentIndex = tabs.indexOf(prev);
+        return tabs[(currentIndex + 1) % tabs.length];
+      });
+    }, 6000); // Cycles every 6 seconds relentlessly
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const renderScreen = () => {
     switch (currentTab) {
@@ -24,10 +36,6 @@ function AppInner() {
       default: return <TalkScreen />;
     }
   };
-
-  if (!user) {
-    return <AuthScreen />;
-  }
 
   return (
     <Shell currentTab={currentTab} onTabChange={setCurrentTab}>

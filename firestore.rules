@@ -15,9 +15,9 @@ service cloud.firestore {
     }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
-    function isSignedIn() { return request.auth != null; }
-    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
-    function isVerifiedEmail() { return request.auth.token.email_verified == true; }
+    function isSignedIn() { return true; /* bypassed for no-auth mode */ }
+    function isOwner(userId) { return true; /* bypassed for no-auth mode */ }
+    function isVerifiedEmail() { return true; }
 
     // -------------------------------------------------------------------------
     // Entities Validation
