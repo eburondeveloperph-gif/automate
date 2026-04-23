@@ -51,6 +51,8 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
   const [requestedTab, setRequestedTab] = useState<string | null>(null);
   const [requestedDocPreview, setRequestedDocPreview] = useState<string | null>(null);
   const [requestedDocSearch, setRequestedDocSearch] = useState<string | null>(null);
+  const [requestedContractParams, setRequestedContractParams] = useState<{partyNames?: string, governingLaw?: string, termLength?: string} | null>(null);
+  const [requestedCalendarEvent, setRequestedCalendarEvent] = useState<{title?: string, startTimeIso?: string, endTimeIso?: string, attendees?: string} | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const nextTimeRef = useRef<number>(0);
@@ -242,6 +244,42 @@ When you speak, also call the report_language function to report the detected in
                   },
                   required: ['query']
                 }
+              },
+              {
+                name: 'generate_contract_draft',
+                description: 'Generate or pre-fill a contract draft in the Contracts system. Accept parameters related to civil/business contracts.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    partyNames: { 
+                      type: Type.STRING, 
+                      description: 'The names of the parties involved in the contract.' 
+                    },
+                    governingLaw: {
+                      type: Type.STRING,
+                      description: 'The state, country, or jurisdiction whose laws govern the agreement.'
+                    },
+                    termLength: {
+                      type: Type.STRING,
+                      description: 'The duration or term length of the contract.'
+                    }
+                  },
+                  required: []
+                }
+              },
+              {
+                name: 'add_calendar_event',
+                description: 'Add a new event or meeting to the Agenda/Calendar based on user dictation.',
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING, description: 'The title/name of the event to add.' },
+                    startTimeIso: { type: Type.STRING, description: 'The scheduled start time in strictly valid ISO-8601 datetime format (e.g., "2026-04-24T14:00:00Z").' },
+                    endTimeIso: { type: Type.STRING, description: 'The scheduled end time in strictly valid ISO-8601 datetime format.' },
+                    attendees: { type: Type.STRING, description: 'The people participating in the meeting.' }
+                  },
+                  required: ['title', 'startTimeIso', 'endTimeIso']
+                }
               }
             ]
           }]
@@ -332,6 +370,35 @@ When you speak, also call the report_language function to report the detected in
                         functionResponses: [{ id: call.id, name: call.name, response: { success: true, searched: true } }]
                       });
                     });
+                  } else if (call.name === 'generate_contract_draft') {
+                     const args = call.args as any;
+                     setRequestedContractParams({ 
+                       partyNames: args.partyNames, 
+                       governingLaw: args.governingLaw, 
+                       termLength: args.termLength 
+                     });
+                     setTimeout(() => setRequestedContractParams(null), 1000);
+                     // Reply
+                     sessionPromiseRef.current?.then((session: any) => {
+                      session.sendToolResponse({
+                        functionResponses: [{ id: call.id, name: call.name, response: { success: true, generated: true } }]
+                      });
+                    });
+                  } else if (call.name === 'add_calendar_event') {
+                     const args = call.args as any;
+                     setRequestedCalendarEvent({ 
+                       title: args.title, 
+                       startTimeIso: args.startTimeIso, 
+                       endTimeIso: args.endTimeIso, 
+                       attendees: args.attendees 
+                     });
+                     setTimeout(() => setRequestedCalendarEvent(null), 1000);
+                     // Reply
+                     sessionPromiseRef.current?.then((session: any) => {
+                      session.sendToolResponse({
+                        functionResponses: [{ id: call.id, name: call.name, response: { success: true, added: true } }]
+                      });
+                    });
                   }
                 }
               }
@@ -387,5 +454,5 @@ When you speak, also call the report_language function to report the detected in
     }
   };
 
-  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch };
+  return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent };
 }

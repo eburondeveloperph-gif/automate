@@ -8,19 +8,23 @@ export default function TalkScreen({
   setVoiceRequestedTab,
   setVoiceRequestedDocPreview,
   setVoiceRequestedDocSearch,
+  setVoiceRequestedContractParams,
+  setVoiceRequestedCalendarEvent,
   onConnectionChange,
   onSpeakingChange
 }: { 
   setVoiceRequestedTab: (tab: TabKey) => void;
   setVoiceRequestedDocPreview?: (docName: string) => void;
   setVoiceRequestedDocSearch?: (query: string) => void;
+  setVoiceRequestedContractParams?: (params: any) => void;
+  setVoiceRequestedCalendarEvent?: (event: any) => void;
   onConnectionChange?: (connected: boolean) => void;
   onSpeakingChange?: (speaking: boolean) => void;
 }) {
   const [activeContext, setActiveContext] = useState<TalkContext>(() => {
     return (localStorage.getItem('beatrice_active_context') as TalkContext) || 'Work';
   });
-  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch } = useLiveAPI(activeContext);
+  const { connect, disconnect, connected, speaking, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent } = useLiveAPI(activeContext);
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [showMicPrompt, setShowMicPrompt] = useState(false);
 
@@ -44,6 +48,20 @@ export default function TalkScreen({
       setVoiceRequestedDocSearch(requestedDocSearch);
     }
   }, [requestedDocSearch, setVoiceRequestedDocSearch, setVoiceRequestedTab]);
+
+  useEffect(() => {
+    if (requestedContractParams !== null && setVoiceRequestedContractParams) {
+      setVoiceRequestedTab('contracts');
+      setVoiceRequestedContractParams(requestedContractParams);
+    }
+  }, [requestedContractParams, setVoiceRequestedContractParams, setVoiceRequestedTab]);
+
+  useEffect(() => {
+    if (requestedCalendarEvent !== null && setVoiceRequestedCalendarEvent) {
+      setVoiceRequestedTab('agenda');
+      setVoiceRequestedCalendarEvent(requestedCalendarEvent);
+    }
+  }, [requestedCalendarEvent, setVoiceRequestedCalendarEvent, setVoiceRequestedTab]);
 
   useEffect(() => {
     if (onConnectionChange) onConnectionChange(connected);

@@ -16,6 +16,8 @@ function AppInner() {
   const [voiceRequestedTab, setVoiceRequestedTab] = useState<TabKey | null>(null);
   const [voiceRequestedDocPreview, setVoiceRequestedDocPreview] = useState<string | null>(null);
   const [voiceRequestedDocSearch, setVoiceRequestedDocSearch] = useState<string | null>(null);
+  const [voiceRequestedContractParams, setVoiceRequestedContractParams] = useState<{partyNames?: string, governingLaw?: string, termLength?: string} | null>(null);
+  const [voiceRequestedCalendarEvent, setVoiceRequestedCalendarEvent] = useState<{title?: string, startTimeIso?: string, endTimeIso?: string, attendees?: string} | null>(null);
   
   // Voice state for global UI overlay
   const [isVoiceConnected, setIsVoiceConnected] = useState(false);
@@ -31,9 +33,9 @@ function AppInner() {
   const renderScreen = () => {
     switch (currentTab) {
       case 'docs': return <DocsScreen voiceRequestedDocPreview={voiceRequestedDocPreview} voiceRequestedDocSearch={voiceRequestedDocSearch} />;
-      case 'agenda': return <AgendaScreen />;
+      case 'agenda': return <AgendaScreen voiceRequestedCalendarEvent={voiceRequestedCalendarEvent} />;
       case 'memory': return <MemoryScreen />;
-      case 'contracts': return <ContractsScreen />;
+      case 'contracts': return <ContractsScreen voiceRequestedContractParams={voiceRequestedContractParams} />;
       default: return null;
     }
   };
@@ -46,6 +48,8 @@ function AppInner() {
             setVoiceRequestedTab={setVoiceRequestedTab} 
             setVoiceRequestedDocPreview={setVoiceRequestedDocPreview}
             setVoiceRequestedDocSearch={setVoiceRequestedDocSearch}
+            setVoiceRequestedContractParams={setVoiceRequestedContractParams}
+            setVoiceRequestedCalendarEvent={setVoiceRequestedCalendarEvent}
             onConnectionChange={setIsVoiceConnected}
             onSpeakingChange={setIsVoiceSpeaking}
           />
