@@ -140,15 +140,15 @@ export default function TalkScreen({
               className="glass-panel-heavy rounded-3xl p-6 max-w-sm w-full border border-[#D4AF37]/30 shadow-2xl flex flex-col gap-4 relative overflow-hidden"
             >
               <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-[#D4AF37] mb-2">
-                <Mic size={24} />
+                <Video size={24} />
               </div>
-              <h3 className="font-serif text-2xl text-white/90">Microphone Access</h3>
+              <h3 className="font-serif text-2xl text-white/90">Vision & Voice Access</h3>
               <p className="text-sm font-light leading-relaxed text-white/70">
-                Beatrice requires access to your microphone to capture your voice commands, transcribe your speech, and converse with you in real-time.
+                Beatrice requires access to your microphone and camera to see you, capture your voice commands, and converse with you in real-time.
               </p>
               <div className="flex flex-col gap-2 mt-4">
                 <button onClick={() => handleGrantMic(true)} className="w-full py-3 rounded-xl bg-[#D4AF37] text-black text-xs uppercase tracking-wider font-bold hover:bg-[#D4AF37]/90 transition-colors shadow-lg shadow-[#D4AF37]/20">
-                  Always Allow
+                  Enable Vision & Voice
                 </button>
                 <div className="flex gap-3">
                   <button onClick={() => setShowMicPrompt(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-white/60 text-xs uppercase tracking-wider font-medium hover:bg-white/5 transition-colors">

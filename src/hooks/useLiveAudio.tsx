@@ -43,7 +43,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 
 export type TalkContext = 'Work' | 'Personal' | 'Travel';
 
-export function useLiveAPI(contextString: TalkContext = 'Work') {
+export function useLiveAPI(contextString: TalkContext = 'Work', enableCamera = true) {
   const [connected, setConnected] = useState(false);
   const [transcript, setTranscript] = useState<{ role: 'jo' | 'beatrice', text: string, time: string }[]>([]);
   const [speaking, setSpeaking] = useState(false);
@@ -60,6 +60,9 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
   const nextTimeRef = useRef<number>(0);
   const sessionPromiseRef = useRef<any>(null);
   const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const frameIntervalRef = useRef<any>(null);
 
   const initAudioContext = async () => {
     if (!audioCtxRef.current) {
@@ -76,6 +79,27 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
     if (audioCtxRef.current.state === 'suspended') {
       await audioCtxRef.current.resume();
     }
+  };
+
+  const captureFrame = () => {
+    if (!videoRef.current || !canvasRef.current || !sessionPromiseRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const base64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+    
+    sessionPromiseRef.current.then((session: any) => {
+      session.sendRealtimeInput({
+        realtimeInput: { mediaChunks: [{ data: base64, mimeType: 'image/jpeg' }] }
+      });
+    }).catch(console.error);
   };
 
   // Monitor mic strength
@@ -183,10 +207,23 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
       await initAudioContext();
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true } 
+        audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
+        video: enableCamera ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15 } } : false
       });
 
-      const source = audioCtxRef.current!.createMediaStreamSource(stream);
+      if (enableCamera) {
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.setAttribute('playsinline', '');
+        video.muted = true;
+        video.play();
+        videoRef.current = video;
+        
+        const canvas = document.createElement('canvas');
+        canvasRef.current = canvas;
+      }
+
+      const audioSource = audioCtxRef.current!.createMediaStreamSource(stream);
       const workletNode = new AudioWorkletNode(audioCtxRef.current!, 'recorder-processor');
       
       // Keep-alive silent oscillator to prevent browser from throttling this tab when in background (or blurred)
@@ -212,8 +249,10 @@ export function useLiveAPI(contextString: TalkContext = 'Work') {
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       const sysInstruct = `You are Beatrice, an executive assistant to Jo Lernout. 
+You are highly knowledgeable of all function tools available to you and should use them autonomously to assist Jo.
 You must immediately greet him as 'Maneer Jo', 'Boss', or 'Mi Lord Jo' in a graceful, excited, human, rich, natural voice.
 Knowledge injection: The current date is ${dateString}. The time is ${timeString}. The user's timezone is ${timeZone}.
+Vision capability: You can see Jo through the camera. Comment on what you see if it's relevant or if he asks.
 Current Interaction Context: [**${contextString}**]. Please tailor your responses heavily to this context context.
 Start by speaking English. As he speaks, automatically adapt to his language.
 Maintain an elegant and highly competent chief of staff persona. Answer concisely.
@@ -375,6 +414,11 @@ When you speak, also call the report_language function to report the detected in
           onopen: () => {
              console.log("Live API connected");
              
+             // Start frame capture loop
+             if (enableCamera) {
+               frameIntervalRef.current = setInterval(captureFrame, 1000); // 1 FPS
+             }
+
              // Now that it's open, attach the microphone and start sending
              workletNode.port.onmessage = (e) => {
                if (sessionPromiseRef.current) {
@@ -386,13 +430,13 @@ When you speak, also call the report_language function to report the detected in
                  }).catch(console.error);
                }
              };
-             source.connect(analyserRef.current!);
-             source.connect(workletNode);
+             audioSource.connect(analyserRef.current!);
+             audioSource.connect(workletNode);
              workletNode.connect(audioCtxRef.current!.destination);
              
              (window as any).currentMicStream = stream;
              (window as any).currentWorklet = workletNode;
-             (window as any).currentSource = source;
+             (window as any).currentSource = audioSource;
           },
           onmessage: async (message: LiveServerMessage) => {
             if (message.serverContent?.interrupted) {
@@ -659,6 +703,10 @@ When you speak, also call the report_language function to report the detected in
 
   const disconnect = () => {
     setConnected(false);
+    if (frameIntervalRef.current) {
+      clearInterval(frameIntervalRef.current);
+      frameIntervalRef.current = null;
+    }
     if (sessionPromiseRef.current) {
       sessionPromiseRef.current.then((session: any) => session.close());
       sessionPromiseRef.current = null;
@@ -671,7 +719,11 @@ When you speak, also call the report_language function to report the detected in
     if ((window as any).currentWorklet) {
       (window as any).currentWorklet.disconnect();
       (window as any).currentSource.disconnect();
+      (window as any).currentWorklet = null;
+      (window as any).currentSource = null;
     }
+    videoRef.current = null;
+    canvasRef.current = null;
   };
 
   return { connect, disconnect, connected, speaking, transcript, detectedLanguage, requestedTab, requestedDocPreview, requestedDocSearch, requestedContractParams, requestedCalendarEvent, micStrength };

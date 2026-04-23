@@ -2,7 +2,8 @@
   "name": "Remix: Beatrice",
   "description": "Luxury private executive voice assistant",
   "requestFramePermissions": [
-    "microphone"
+    "microphone",
+    "camera"
   ],
   "majorCapabilities": []
 }
